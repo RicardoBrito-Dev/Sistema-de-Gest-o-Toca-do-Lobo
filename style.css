@@ -164,11 +164,13 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   margin-bottom: 32px;
 }
 
-.logo-icon {
+.logo-img-login {
   display: block;
-  font-size: 72px;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 0 22px rgba(200,168,50,.55));
+  width: 140px;
+  height: auto;
+  margin: 0 auto 12px;
+  border-radius: var(--r-md);
+  filter: drop-shadow(0 0 12px rgba(200,168,50,.35));
   animation: float 3.5s ease-in-out infinite;
 }
 
@@ -325,7 +327,7 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   min-height: var(--header-h);
 }
 
-.sidebar-logo { font-size: 30px; filter: drop-shadow(0 0 8px rgba(200,168,50,.45)); flex-shrink:0; }
+.sidebar-logo-img { width: 36px; height: auto; border-radius: var(--r-sm); filter: drop-shadow(0 0 6px rgba(200,168,50,.3)); flex-shrink:0; }
 
 .sidebar-title h2 {
   font-family: var(--ff-title);
@@ -1785,7 +1787,7 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   /* Login page */
   .login-container { padding: 16px; }
   .login-logo h1   { font-size: 2rem; }
-  .logo-icon       { font-size: 56px; }
+  .logo-img-login  { width: 100px; }
   .login-form      { padding: 24px 20px; }
 
   /* Toast positioning */
