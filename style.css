@@ -1803,6 +1803,92 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   /* Buttons bigger touch areas */
   .btn-primary, .btn-secondary { padding: 11px 18px; }
   .btn-icon { padding: 8px 10px; font-size: 1rem; }
+
+  /* ── COMANDAS RESPONSIVE ── */
+  .comanda-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .comanda-header > div {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .comanda-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px 14px;
+    position: relative;
+  }
+  .row-name {
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+    padding-right: 40px; /* space for delete button */
+  }
+  .comanda-row > .btn-icon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+  }
+  .row-weapon {
+    text-align: left;
+    font-size: .85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .row-weapon::before {
+    content: "Arma:";
+    color: var(--text-300);
+    font-size: .75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .row-mags, .row-drinks {
+    justify-content: space-between;
+    text-align: left;
+    padding: 6px 0;
+    border-top: 1px solid rgba(74,138,64,.08);
+  }
+  .row-mags::before {
+    content: "Carregadores:";
+    color: var(--text-300);
+    font-size: .75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .row-drinks::before {
+    content: "Bebidas:";
+    color: var(--text-300);
+    font-size: .75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .row-prices {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    border-top: 1px solid rgba(74,138,64,.08);
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .row-total {
+    font-size: 1.1rem;
+    padding-right: 0;
+  }
+  .comanda-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .item-name { grid-column: span 2; font-size: 1rem; margin-bottom: 4px; }
+  .item-weapon, .item-mags, .item-drinks { text-align: left; }
+  .item-weapon::before { content: "Arma: "; color: var(--text-300); }
+  .item-mags::before { content: "Mags: "; color: var(--text-300); }
+  .item-drinks::before { content: "Bebidas: "; color: var(--text-300); }
+  .item-total { grid-column: span 2; font-size: 1.05rem; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(74,138,64,.2); }
 }
 
 /* ════════════════════════════════════════════════════════════════
