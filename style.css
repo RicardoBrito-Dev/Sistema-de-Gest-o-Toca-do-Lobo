@@ -1381,30 +1381,109 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
 }
 
 /* ── Inputs editáveis nas Comandas ─────────────────────────────── */
-.cmd-input {
-  background: rgba(255,255,255,.08);
+.cmd-input-wrapper {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,.05);
   border: 1px solid rgba(74,138,64,.3);
-  border-radius: 3px;
-  color: var(--text-100);
-  font-family: var(--ff-body);
-  font-size: .85rem;
-  font-weight: 600;
-  padding: 5px 8px;
-  width: 45px;
-  text-align: center;
+  border-radius: 4px;
+  overflow: hidden;
   transition: var(--ease);
-  outline: none;
 }
 
-.cmd-input:focus {
+.cmd-input-wrapper:focus-within {
   border-color: var(--green-500);
   background: rgba(74,138,64,.15);
   box-shadow: 0 0 0 2px rgba(74,138,64,.2);
 }
 
-.cmd-input:hover {
-  border-color: var(--green-400);
-  background: rgba(74,138,64,.1);
+.btn-cmd-adj {
+  background: transparent;
+  border: none;
+  color: var(--green-300);
+  font-size: 1.2rem;
+  font-weight: 500;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--ease);
+}
+
+.btn-cmd-adj:hover {
+  background: rgba(74,138,64,.2);
+  color: #fff;
+}
+
+.btn-cmd-adj:active {
+  background: rgba(74,138,64,.4);
+}
+
+.cmd-input {
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(74,138,64,.2);
+  border-right: 1px solid rgba(74,138,64,.2);
+  color: var(--text-100);
+  font-family: var(--ff-body);
+  font-size: .95rem;
+  font-weight: 700;
+  padding: 0;
+  width: 44px;
+  height: 34px;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield; /* Firefox */
+}
+
+.cmd-input::-webkit-outer-spin-button,
+.cmd-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── Expandable Comanda Details (> 4 players) ───────────────────── */
+.cmd-details {
+  border-bottom: 1px solid rgba(74,138,64,.08);
+  transition: var(--ease);
+}
+.cmd-details.alt {
+  background: rgba(74,138,64,.02);
+}
+.cmd-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-100);
+  list-style: none; /* remove default arrow */
+  user-select: none;
+}
+.cmd-summary::-webkit-details-marker { display: none; }
+.cmd-summary::before {
+  content: "▶";
+  font-size: 0.7rem;
+  color: var(--green-300);
+  margin-right: 12px;
+  transition: transform 0.2s;
+}
+.cmd-details[open] .cmd-summary::before {
+  transform: rotate(90deg);
+}
+.cmd-summary-name {
+  flex: 1;
+  font-size: 1.05rem;
+}
+.cmd-summary .cmd-total {
+  color: var(--success);
+  font-size: 1.1rem;
+}
+.cmd-details-body {
+  padding: 0 16px 16px 36px;
 }
 
 .row-prices {

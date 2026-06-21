@@ -292,16 +292,13 @@
 
       <!-- ─── TAB: COMANDAS ────────────────── -->
       <section id="tab-comandas" class="tab-content hidden">
-        <div class="tab-toolbar">
-          <div class="filter-group">
-            <label for="cmd-filter-type">📊 Filtrar:</label>
-            <select id="cmd-filter-type" class="config-input" style="width: 180px">
-              <option value="date">📅 Por Data (Hoje)</option>
-              <option value="player">🎯 Por Jogador</option>
-            </select>
+        <div class="tab-toolbar" style="flex-wrap: wrap;">
+          <div class="filter-group" style="flex:1; min-width: 250px;">
+            <input type="text" id="cmd-player-filter" placeholder="🔍 Buscar jogador pelo nome..." class="search-input" style="width: 100%" />
           </div>
-          <input type="date" id="cmd-date-filter" class="date-input" />
-          <input type="text" id="cmd-player-filter" placeholder="🔍 Buscar por nome..." class="search-input" style="display:none" />
+          <div class="filter-group">
+            <input type="date" id="cmd-date-filter" class="date-input" title="Data da comanda" />
+          </div>
         </div>
 
         <div class="section-card">

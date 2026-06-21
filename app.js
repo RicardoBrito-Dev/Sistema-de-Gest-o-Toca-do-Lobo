@@ -205,9 +205,17 @@ function fmtDate(ds) {
 // ════════════════════════════════════════════════════════════════
 // CALCULATIONS
 // ════════════════════════════════════════════════════════════════
+function getChargeableMags(hasWeapon, magazines) {
+  let mags = magazines || 0;
+  if (!hasWeapon) {
+    mags = Math.max(0, mags - 2);
+  }
+  return mags;
+}
+
 function calcTotal(p) {
   const field   = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-  const mags    = (p.magazines || 0) * settings.magazinePrice;
+  const mags    = getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
   const drinks  = (p.drinks    || 0) * settings.drinkPrice;
   return field + mags + drinks;
 }
@@ -377,7 +385,7 @@ function updatePlayerPreview() {
   const drinks    = parseInt(q('#p-drinks').value)    || 0;
 
   const field     = hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-  const magCost   = mags   * settings.magazinePrice;
+  const magCost   = getChargeableMags(hasWeapon, mags) * settings.magazinePrice;
   const drinkCost = drinks * settings.drinkPrice;
   const total     = field + magCost + drinkCost;
 
@@ -450,7 +458,7 @@ function renderFinanceiro() {
   periodAtt.forEach(p => {
     if (p.hasWeapon) fieldFeeTotal += settings.fieldFeeOwn;
     else             rentalTotal   += settings.weaponRental;
-    magTotal   += (p.magazines || 0) * settings.magazinePrice;
+    magTotal   += getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
     drinkTotal += (p.drinks    || 0) * settings.drinkPrice;
   });
 
@@ -596,44 +604,26 @@ function deleteExpense(id) {
 let comandasFilterType = 'player';
 
 function renderComandas() {
-  const filterType = q('#cmd-filter-type').value || 'date';
   const today = todayStr();
+  const selectedDate = q('#cmd-date-filter').value || today;
+  const searchText = q('#cmd-player-filter').value.toLowerCase().trim();
   
   let filtered = [];
 
-  if (filterType === 'date') {
-    const selectedDate = q('#cmd-date-filter').value || today;
-    const dateRecords = attendance.filter(p => p.date === selectedDate).sort((a, b) => a.name.localeCompare(b.name));
-    
-    if (dateRecords.length > 0) {
-      const totalGrupo = dateRecords.reduce((s, p) => s + calcTotal(p), 0);
-      filtered.push({ 
-        type: 'date', 
-        date: selectedDate, 
-        dateLabel: fmtDate(selectedDate),
-        records: dateRecords,
-        total: totalGrupo
-      });
-    }
-  } else if (filterType === 'player') {
-    const searchText = q('#cmd-player-filter').value.toLowerCase().trim();
-    const grouped = {};
-    
-    attendance.forEach(p => {
-      if (!grouped[p.name]) grouped[p.name] = [];
-      grouped[p.name].push(p);
-    });
-
-    Object.keys(grouped).sort().forEach(name => {
-      if (searchText === '' || name.toLowerCase().includes(searchText)) {
-        const totalGrupo = grouped[name].reduce((s, p) => s + calcTotal(p), 0);
-        filtered.push({ 
-          type: 'player', 
-          name, 
-          records: grouped[name],
-          total: totalGrupo
-        });
-      }
+  let dateRecords = attendance.filter(p => p.date === selectedDate).sort((a, b) => a.name.localeCompare(b.name));
+  
+  if (searchText) {
+    dateRecords = dateRecords.filter(p => p.name.toLowerCase().includes(searchText));
+  }
+  
+  if (dateRecords.length > 0) {
+    const totalGrupo = dateRecords.reduce((s, p) => s + calcTotal(p), 0);
+    filtered.push({ 
+      type: 'date', 
+      date: selectedDate, 
+      dateLabel: fmtDate(selectedDate),
+      records: dateRecords,
+      total: totalGrupo
     });
   }
 
@@ -661,6 +651,7 @@ function renderComandas() {
         </div>
 
         <div class="comanda-list">
+          ${records.length > 4 ? '' : `
           <div class="comanda-row" style="background: rgba(74,138,64,.12); font-weight: 700; border-bottom: 2px solid rgba(74,138,64,.25);">
             <div class="row-name">Jogador</div>
             <div class="row-weapon">Armamento</div>
@@ -669,31 +660,77 @@ function renderComandas() {
             <div class="row-prices">Preços</div>
             <div class="row-total">Total</div>
           </div>
+          `}
           ${records.map((p, pIdx) => {
             const armamento = p.hasWeapon ? '🪖 Própria' : '🔫 Alugada';
             const precoArma = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-            const precoMags = (p.magazines || 0) * settings.magazinePrice;
+            const precoMags = getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
             const precoBebidas = (p.drinks || 0) * settings.drinkPrice;
             const total = calcTotal(p);
+            
+            const isCollapsible = records.length > 4;
 
-            return `
-              <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
-                <div class="row-name">${esc(p.name)}</div>
-                <div class="row-weapon">${armamento}</div>
-                <div class="row-mags">
-                  <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
+            if (isCollapsible) {
+              return `
+                <details class="cmd-details ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
+                  <summary class="cmd-summary">
+                    <span class="cmd-summary-name">${esc(p.name)}</span>
+                    <strong class="cmd-total" data-player-id="${p.id}">${brl(total)}</strong>
+                  </summary>
+                  <div class="cmd-details-body">
+                    <div class="comanda-row" style="padding: 0; border: none; background: transparent;">
+                      <div class="row-weapon">${armamento}</div>
+                      <div class="row-mags">
+                        <div class="cmd-input-wrapper">
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)">-</button>
+                          <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)">+</button>
+                        </div>
+                      </div>
+                      <div class="row-drinks">
+                        <div class="cmd-input-wrapper">
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)">-</button>
+                          <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)">+</button>
+                        </div>
+                      </div>
+                      <div class="row-prices">
+                        <span class="price">${brl(precoArma)}</span>
+                        <span class="price cmd-mag-price" data-player-id="${p.id}">${brl(precoMags)}</span>
+                        <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              `;
+            } else {
+              return `
+                <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
+                  <div class="row-name">${esc(p.name)}</div>
+                  <div class="row-weapon">${armamento}</div>
+                  <div class="row-mags">
+                    <div class="cmd-input-wrapper">
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)">-</button>
+                      <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)">+</button>
+                    </div>
+                  </div>
+                  <div class="row-drinks">
+                    <div class="cmd-input-wrapper">
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)">-</button>
+                      <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)">+</button>
+                    </div>
+                  </div>
+                  <div class="row-prices">
+                    <span class="price">${brl(precoArma)}</span>
+                    <span class="price cmd-mag-price" data-player-id="${p.id}">${brl(precoMags)}</span>
+                    <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
+                  </div>
+                  <div class="row-total cmd-total" data-player-id="${p.id}"><strong>${brl(total)}</strong></div>
                 </div>
-                <div class="row-drinks">
-                  <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
-                </div>
-                <div class="row-prices">
-                  <span class="price">${brl(precoArma)}</span>
-                  <span class="price cmd-mag-price" data-player-id="${p.id}">${brl(precoMags)}</span>
-                  <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
-                </div>
-                <div class="row-total cmd-total" data-player-id="${p.id}"><strong>${brl(total)}</strong></div>
-              </div>
-            `;
+              `;
+            }
           }).join('')}
         </div>
       </div>
@@ -714,7 +751,7 @@ function updateComandaField(playerId, fieldName, value) {
   
   // Atualizar apenas a linha do jogador na tela (sem re-renderizar tudo)
   const precoArma = player.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-  const precoMags = (player.magazines || 0) * settings.magazinePrice;
+  const precoMags = getChargeableMags(player.hasWeapon, player.magazines) * settings.magazinePrice;
   const precoBebidas = (player.drinks || 0) * settings.drinkPrice;
   const total = calcTotal(player);
 
@@ -723,13 +760,35 @@ function updateComandaField(playerId, fieldName, value) {
   const totalEl = q(`.cmd-total[data-player-id="${playerId}"]`);
 
   if (magPriceEl) magPriceEl.textContent = brl(precoMags);
-  if (drinkPriceEl) drinkPriceEl.textContent = brl(precoBebidas);
+  if (drinkPriceEl)  drinkPriceEl.textContent = brl(precoBebidas);
   if (totalEl) totalEl.innerHTML = `<strong>${brl(total)}</strong>`;
+  
+  // Efeito visual de update
+  if (magPriceEl) {
+    magPriceEl.style.opacity = '0.5';
+    setTimeout(() => magPriceEl.style.opacity = '1', 150);
+  }
 
   // Atualizar o resumo total da comanda
   updateComandaTotals();
   
   toast('✏️ Comanda atualizada!');
+}
+
+function adjustComandaField(playerId, fieldName, delta) {
+  const player = attendance.find(p => p.id === playerId);
+  if (!player) return;
+  
+  const current = player[fieldName] || 0;
+  const newValue = Math.max(0, current + delta);
+  
+  const inputClass = fieldName === 'magazines' ? '.cmd-mags' : '.cmd-drinks';
+  const input = q(`${inputClass}[data-player-id="${playerId}"]`);
+  if (input) {
+    input.value = newValue;
+  }
+  
+  updateComandaField(playerId, fieldName, newValue);
 }
 
 // ─ Atualizar totais da comanda ─────────────────────────────────
@@ -815,7 +874,7 @@ function openComandaModal(groupIdx, groupType) {
   const detalhesHTML = records.map(p => {
     const armamento = p.hasWeapon ? '🪖 Arma Própria' : '🔫 Arma Alugada';
     const precoArma = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-    const precoMags = (p.magazines || 0) * settings.magazinePrice;
+    const precoMags = getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
     const precoBebidas = (p.drinks || 0) * settings.drinkPrice;
 
     return `
@@ -1270,16 +1329,6 @@ function setupListeners() {
   q('#expense-form').addEventListener('submit', saveExpense);
 
   // Comandas
-  q('#cmd-filter-type').addEventListener('change', () => {
-    const filterType = q('#cmd-filter-type').value;
-    q('#cmd-player-filter').style.display = filterType === 'player' ? 'inline-block' : 'none';
-    q('#cmd-date-filter').style.display = filterType === 'date' ? 'inline-block' : 'none';
-    q('#cmd-player-filter').value = '';
-    if (filterType === 'date') {
-      q('#cmd-date-filter').value = todayStr();
-    }
-    renderComandas();
-  });
   q('#cmd-player-filter').addEventListener('input', renderComandas);
   q('#cmd-date-filter').addEventListener('change', renderComandas);
 
