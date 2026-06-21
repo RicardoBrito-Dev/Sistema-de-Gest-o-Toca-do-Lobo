@@ -151,6 +151,7 @@ function setDateDefaults() {
   const today = todayStr();
   q('#attendance-date-filter').value = today;
   q('#fin-custom-date').value        = today;
+  q('#cmd-date-filter').value        = today;
 
   const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
   q('#page-date').textContent = new Date().toLocaleDateString('pt-BR', opts);
@@ -410,6 +411,7 @@ function savePlayer(e) {
   closePlayerModal();
   renderAttendance();
   updateDashboard();
+  renderComandas();
 }
 
 // ─ Delete player ───────────────────────────────────────────────
@@ -418,6 +420,7 @@ function deletePlayer(id) {
   persist();
   renderAttendance();
   updateDashboard();
+  renderComandas();
   toast('Jogador removido!');
 }
 
@@ -593,72 +596,181 @@ function deleteExpense(id) {
 let comandasFilterType = 'player';
 
 function renderComandas() {
-  const filterType = q('#cmd-filter-type').value || comandasFilterType;
-  comandasFilterType = filterType;
-
+  const filterType = q('#cmd-filter-type').value || 'date';
+  const today = todayStr();
+  
   let filtered = [];
 
-  if (filterType === 'player') {
+  if (filterType === 'date') {
+    const selectedDate = q('#cmd-date-filter').value || today;
+    const dateRecords = attendance.filter(p => p.date === selectedDate).sort((a, b) => a.name.localeCompare(b.name));
+    
+    if (dateRecords.length > 0) {
+      const totalGrupo = dateRecords.reduce((s, p) => s + calcTotal(p), 0);
+      filtered.push({ 
+        type: 'date', 
+        date: selectedDate, 
+        dateLabel: fmtDate(selectedDate),
+        records: dateRecords,
+        total: totalGrupo
+      });
+    }
+  } else if (filterType === 'player') {
     const searchText = q('#cmd-player-filter').value.toLowerCase().trim();
     const grouped = {};
+    
     attendance.forEach(p => {
       if (!grouped[p.name]) grouped[p.name] = [];
       grouped[p.name].push(p);
     });
 
-    Object.keys(grouped).forEach(name => {
+    Object.keys(grouped).sort().forEach(name => {
       if (searchText === '' || name.toLowerCase().includes(searchText)) {
-        filtered.push({ type: 'player', name, records: grouped[name] });
+        const totalGrupo = grouped[name].reduce((s, p) => s + calcTotal(p), 0);
+        filtered.push({ 
+          type: 'player', 
+          name, 
+          records: grouped[name],
+          total: totalGrupo
+        });
       }
     });
-  } else if (filterType === 'date') {
-    const selectedDate = q('#cmd-date-filter').value;
-    if (selectedDate) {
-      const grouped = {};
-      const dateRecords = attendance.filter(p => p.date === selectedDate);
-      dateRecords.forEach(p => {
-        if (!grouped[p.date]) grouped[p.date] = [];
-        grouped[p.date].push(p);
-      });
-      Object.keys(grouped).forEach(date => {
-        filtered.push({ type: 'date', date, records: grouped[date] });
-      });
-    }
   }
 
   const container = q('#comandas-container');
+  
   if (filtered.length === 0) {
-    container.innerHTML = '<p class="empty-state">Nenhuma comanda encontrada</p>';
+    container.innerHTML = '<div class="empty-state">📋 Nenhuma comanda encontrada para este filtro</div>';
     return;
   }
 
   container.innerHTML = filtered.map((group, idx) => {
-    const groupLabel = group.type === 'player' ? group.name : `📅 ${fmtDate(group.date)}`;
-    const totalGrupo = group.records.reduce((s, p) => s + calcTotal(p), 0);
+    const groupLabel = group.type === 'player' ? group.name : `📅 ${group.dateLabel}`;
+    const records = group.records;
 
     return `
       <div class="comanda-card fade-in">
         <div class="comanda-header">
           <div class="comanda-title">
-            <strong>${esc(groupLabel)}</strong>
-            <span class="comanda-total">${brl(totalGrupo)}</span>
+            <h3>${esc(groupLabel)}</h3>
+            <span class="comanda-summary">
+              🎯 ${records.length} jogador(es) · 💰 ${brl(group.total)}
+            </span>
           </div>
-          <button class="btn-primary btn-sm" onclick="openComandaModal(${idx}, '${group.type}')" title="Ver e imprimir">📋 Ver Comanda</button>
+          <button class="btn-primary btn-sm" onclick="openComandaModal(${idx}, '${group.type}')" title="Ver e imprimir">📋 Imprimir</button>
         </div>
-        <div class="comanda-items">
-          ${group.records.map(p => `
-            <div class="comanda-item">
-              <span class="item-name">${esc(p.name)}</span>
-              <span class="item-weapon">${p.hasWeapon ? '🪖' : '🔫'}</span>
-              <span class="item-mags">${p.magazines || 0}🎯</span>
-              <span class="item-drinks">${p.drinks || 0}🥤</span>
-              <span class="item-total">${brl(calcTotal(p))}</span>
-            </div>
-          `).join('')}
+
+        <div class="comanda-list">
+          <div class="comanda-row" style="background: rgba(74,138,64,.12); font-weight: 700; border-bottom: 2px solid rgba(74,138,64,.25);">
+            <div class="row-name">Jogador</div>
+            <div class="row-weapon">Armamento</div>
+            <div class="row-mags">Carreg.</div>
+            <div class="row-drinks">Bebidas</div>
+            <div class="row-prices">Preços</div>
+            <div class="row-total">Total</div>
+          </div>
+          ${records.map((p, pIdx) => {
+            const armamento = p.hasWeapon ? '🪖 Própria' : '🔫 Alugada';
+            const precoArma = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
+            const precoMags = (p.magazines || 0) * settings.magazinePrice;
+            const precoBebidas = (p.drinks || 0) * settings.drinkPrice;
+            const total = calcTotal(p);
+
+            return `
+              <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
+                <div class="row-name">${esc(p.name)}</div>
+                <div class="row-weapon">${armamento}</div>
+                <div class="row-mags">
+                  <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
+                </div>
+                <div class="row-drinks">
+                  <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
+                </div>
+                <div class="row-prices">
+                  <span class="price">${brl(precoArma)}</span>
+                  <span class="price cmd-mag-price" data-player-id="${p.id}">${brl(precoMags)}</span>
+                  <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
+                </div>
+                <div class="row-total cmd-total" data-player-id="${p.id}"><strong>${brl(total)}</strong></div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }).join('');
+}
+
+// ─ Editar campo na comanda ──────────────────────────────────────
+function updateComandaField(playerId, fieldName, value) {
+  const player = attendance.find(p => p.id === playerId);
+  if (!player) return;
+
+  const newValue = Math.max(0, parseInt(value) || 0);
+  player[fieldName] = newValue;
+
+  persist();
+  updateDashboard();
+  
+  // Atualizar apenas a linha do jogador na tela (sem re-renderizar tudo)
+  const precoArma = player.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
+  const precoMags = (player.magazines || 0) * settings.magazinePrice;
+  const precoBebidas = (player.drinks || 0) * settings.drinkPrice;
+  const total = calcTotal(player);
+
+  const magPriceEl = q(`.cmd-mag-price[data-player-id="${playerId}"]`);
+  const drinkPriceEl = q(`.cmd-drink-price[data-player-id="${playerId}"]`);
+  const totalEl = q(`.cmd-total[data-player-id="${playerId}"]`);
+
+  if (magPriceEl) magPriceEl.textContent = brl(precoMags);
+  if (drinkPriceEl) drinkPriceEl.textContent = brl(precoBebidas);
+  if (totalEl) totalEl.innerHTML = `<strong>${brl(total)}</strong>`;
+
+  // Atualizar o resumo total da comanda
+  updateComandaTotals();
+  
+  toast('✏️ Comanda atualizada!');
+}
+
+// ─ Atualizar totais da comanda ─────────────────────────────────
+function updateComandaTotals() {
+  const filterType = q('#cmd-filter-type').value || 'date';
+  const today = todayStr();
+
+  let filtered = [];
+
+  if (filterType === 'date') {
+    const selectedDate = q('#cmd-date-filter').value || today;
+    const dateRecords = attendance.filter(p => p.date === selectedDate);
+    if (dateRecords.length > 0) {
+      const totalGrupo = dateRecords.reduce((s, p) => s + calcTotal(p), 0);
+      filtered.push({ records: dateRecords, total: totalGrupo });
+    }
+  } else if (filterType === 'player') {
+    const searchText = q('#cmd-player-filter').value.toLowerCase().trim();
+    const grouped = {};
+    
+    attendance.forEach(p => {
+      if (!grouped[p.name]) grouped[p.name] = [];
+      grouped[p.name].push(p);
+    });
+
+    Object.keys(grouped).sort().forEach(name => {
+      if (searchText === '' || name.toLowerCase().includes(searchText)) {
+        const totalGrupo = grouped[name].reduce((s, p) => s + calcTotal(p), 0);
+        filtered.push({ records: grouped[name], total: totalGrupo });
+      }
+    });
+  }
+
+  // Atualizar resumos
+  qAll('.comanda-summary').forEach((el, idx) => {
+    if (filtered[idx]) {
+      const count = filtered[idx].records.length;
+      const total = filtered[idx].total;
+      el.textContent = `🎯 ${count} jogador(es) · 💰 ${brl(total)}`;
+    }
+  });
 }
 
 function openComandaModal(groupIdx, groupType) {
@@ -1163,7 +1275,9 @@ function setupListeners() {
     q('#cmd-player-filter').style.display = filterType === 'player' ? 'inline-block' : 'none';
     q('#cmd-date-filter').style.display = filterType === 'date' ? 'inline-block' : 'none';
     q('#cmd-player-filter').value = '';
-    q('#cmd-date-filter').value = todayStr();
+    if (filterType === 'date') {
+      q('#cmd-date-filter').value = todayStr();
+    }
     renderComandas();
   });
   q('#cmd-player-filter').addEventListener('input', renderComandas);

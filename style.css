@@ -1315,6 +1315,117 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   flex-direction: column;
   gap: 0;
 }
+
+.comanda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.comanda-row {
+  display: grid;
+  grid-template-columns: 1.8fr 1.2fr 0.6fr 0.6fr 1.4fr 0.8fr;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(74,138,64,.08);
+  font-size: .82rem;
+  transition: background .15s;
+  line-height: 1.4;
+}
+
+.comanda-row:hover {
+  background: rgba(74,138,64,.06);
+}
+
+.comanda-row.alt {
+  background: rgba(74,138,64,.02);
+}
+
+.row-name {
+  font-weight: 600;
+  color: var(--text-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-weapon {
+  text-align: center;
+  color: var(--text-200);
+  font-size: .8rem;
+}
+
+.row-mags,
+.row-drinks {
+  text-align: center;
+  color: var(--text-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.row-mags .badge,
+.row-drinks .badge {
+  background: rgba(74,138,64,.25);
+  color: var(--green-300);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-weight: 600;
+  font-size: .75rem;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* ── Inputs editáveis nas Comandas ─────────────────────────────── */
+.cmd-input {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(74,138,64,.3);
+  border-radius: 3px;
+  color: var(--text-100);
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 5px 8px;
+  width: 45px;
+  text-align: center;
+  transition: var(--ease);
+  outline: none;
+}
+
+.cmd-input:focus {
+  border-color: var(--green-500);
+  background: rgba(74,138,64,.15);
+  box-shadow: 0 0 0 2px rgba(74,138,64,.2);
+}
+
+.cmd-input:hover {
+  border-color: var(--green-400);
+  background: rgba(74,138,64,.1);
+}
+
+.row-prices {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: .75rem;
+}
+
+.row-prices .price {
+  color: var(--text-300);
+  min-width: 50px;
+  text-align: right;
+}
+
+.row-total {
+  text-align: right;
+  font-weight: 700;
+  color: var(--success);
+  font-size: .9rem;
+  padding-right: 4px;
+}
+
 .comanda-item {
   display: grid;
   grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 1fr;
@@ -1469,6 +1580,13 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   .filter-group select,
   .search-input {
     width: 100%;
+  }
+
+  .comanda-row {
+    grid-template-columns: 1fr 0.8fr 0.6fr 0.6fr 1fr;
+    gap: 6px;
+    padding: 10px 12px;
+    font-size: .75rem;
   }
 
   .comanda-item {

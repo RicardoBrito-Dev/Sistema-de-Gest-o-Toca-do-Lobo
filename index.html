@@ -294,19 +294,19 @@
       <section id="tab-comandas" class="tab-content hidden">
         <div class="tab-toolbar">
           <div class="filter-group">
-            <label for="cmd-filter-type">📊 Ver por:</label>
+            <label for="cmd-filter-type">📊 Filtrar:</label>
             <select id="cmd-filter-type" class="config-input" style="width: 180px">
-              <option value="player">🎯 Jogador</option>
-              <option value="date">📅 Data</option>
+              <option value="date">📅 Por Data (Hoje)</option>
+              <option value="player">🎯 Por Jogador</option>
             </select>
           </div>
-          <input type="date" id="cmd-date-filter" class="date-input" style="display:none" />
-          <input type="text" id="cmd-player-filter" placeholder="Buscar por nome..." class="search-input" />
+          <input type="date" id="cmd-date-filter" class="date-input" />
+          <input type="text" id="cmd-player-filter" placeholder="🔍 Buscar por nome..." class="search-input" style="display:none" />
         </div>
 
         <div class="section-card">
           <div id="comandas-container" class="comandas-list">
-            <p class="empty-state">Nenhuma comanda encontrada</p>
+            <p class="empty-state">📋 Nenhuma comanda encontrada</p>
           </div>
         </div>
       </section>
