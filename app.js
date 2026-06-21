@@ -18,7 +18,7 @@ const DEFAULTS = {
   magazinePrice:15,   // por carregador
   drinkPrice:   5,    // por bebida
   username:    'admin',
-  password:    'toca2024'
+  password:    'toca2026'
 };
 
 // ── STATE ──────────────────────────────────────────────────────────
