@@ -28,7 +28,7 @@ export function ComandaModal({ open, label, records, onClose }: Props) {
       .text-center{text-align:center}.text-right{text-align:right}
       .invoice-total{margin:20px 0;text-align:right;border-top:2px solid #333;padding-top:15px;font-weight:bold}
       .invoice-footer{margin-top:30px;text-align:center;font-size:11px;color:#666}
-      </style></head><body>${node.innerHTML}<script>window.print();window.onafterprint=()=>window.close();<\/script>
+      </style></head><body>${node.innerHTML}<script>window.print();window.onafterprint=()=>window.close();</script>
       </body></html>`);
     w.document.close();
   };
