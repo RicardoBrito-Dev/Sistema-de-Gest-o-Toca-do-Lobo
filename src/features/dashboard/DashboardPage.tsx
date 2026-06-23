@@ -77,9 +77,9 @@ export function DashboardPage() {
                   {players.map((p) => (
                     <div key={p.id} className="flex items-center justify-between gap-2 px-4 py-2 text-sm">
                       <span className="font-medium text-surface-fg">{p.name}</span>
-                      <Badge colorsVariant={p.hasWeapon ? 'positive' : 'steelblue'}>
-                        {p.hasWeapon ? 'Arma própria' : 'Arma alugada'}
-                      </Badge>
+                      {p.isTeam
+                        ? <Badge colorsVariant="alert">🪖 Time</Badge>
+                        : <Badge colorsVariant={p.hasWeapon ? 'positive' : 'steelblue'}>{p.hasWeapon ? 'Arma própria' : 'Arma alugada'}</Badge>}
                       <span className="font-semibold tabular-nums text-surface-fg">{brl(calcTotal(p, settings))}</span>
                     </div>
                   ))}

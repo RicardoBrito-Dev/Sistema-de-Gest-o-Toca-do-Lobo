@@ -77,9 +77,9 @@ export function AttendancePage() {
                 <tr key={p.id} className="transition-colors hover:bg-canvas">
                   <td className="px-4 py-3 font-medium text-surface-fg">{p.name}</td>
                   <td className="px-4 py-3">
-                    <Badge kind={p.hasWeapon ? 'badge-own' : 'badge-rental'}>
-                      {p.hasWeapon ? 'Arma própria' : 'Arma alugada'}
-                    </Badge>
+                    {p.isTeam
+                      ? <Badge kind="badge-active">🪖 Time</Badge>
+                      : <Badge kind={p.hasWeapon ? 'badge-own' : 'badge-rental'}>{p.hasWeapon ? 'Arma própria' : 'Arma alugada'}</Badge>}
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.magazines || 0}</td>
                   <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.drinks || 0}</td>
