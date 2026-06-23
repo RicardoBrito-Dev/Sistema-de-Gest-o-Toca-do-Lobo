@@ -652,14 +652,16 @@ function renderComandas() {
   container.innerHTML = filtered.map((group, idx) => {
     const groupLabel = group.type === 'player' ? group.name : `📅 ${group.dateLabel}`;
     const records = group.records;
+    const allPaid = records.length > 0 && records.every(p => p.paid);
 
     return `
-      <div class="comanda-card fade-in">
+      <div class="comanda-card fade-in ${allPaid ? 'comanda-card-paid' : ''}">
         <div class="comanda-header">
           <div class="comanda-title">
             <h3>${esc(groupLabel)}</h3>
             <span class="comanda-summary">
               🎯 ${records.length} jogador(es) · 💰 ${brl(group.total)}
+              ${allPaid ? '<span class="badge-pago">✅ PAGO</span>' : ''}
             </span>
           </div>
           <button class="btn-primary btn-sm" onclick="openComandaModal(${idx}, '${group.type}')" title="Ver e imprimir">📋 Imprimir</button>
@@ -682,31 +684,41 @@ function renderComandas() {
             const precoMags = p.isTeam ? 0 : getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
             const precoBebidas = (p.drinks || 0) * (p.isTeam ? (settings.teamDrinkPrice ?? 3) : settings.drinkPrice);
             const total = calcTotal(p);
-            
+            const isPaid = !!p.paid;
+            const paidAtStr = p.paidAt ? new Date(p.paidAt).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+            const disabledAttr = isPaid ? 'disabled' : '';
+
+            const closeBtn = isPaid
+              ? `<div class="cmd-paid-badge">✅ PAGO ${paidAtStr ? '<small>' + paidAtStr + '</small>' : ''}</div>`
+              : `<button class="btn-close-comanda" onclick="closePlayerComanda('${p.id}')">✅ Fechar</button>`;
+
             const isCollapsible = records.length > 4;
 
             if (isCollapsible) {
               return `
-                <details class="cmd-details ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
+                <details class="cmd-details ${pIdx % 2 === 0 ? '' : 'alt'} ${isPaid ? 'cmd-row-paid' : ''}" data-player-id="${p.id}">
                   <summary class="cmd-summary">
-                    <span class="cmd-summary-name">${p.isTeam ? '🪖 ' : ''}${esc(p.name)}</span>
+                    <span class="cmd-summary-name">${p.isTeam ? '🪖 ' : ''}${esc(p.name)}
+                      ${isPaid ? '<span class="badge-pago-sm">✅ PAGO</span>' : ''}
+                    </span>
                     <strong class="cmd-total" data-player-id="${p.id}">${brl(total)}</strong>
+                    ${closeBtn}
                   </summary>
                   <div class="cmd-details-body">
                     <div class="comanda-row" style="padding: 0; border: none; background: transparent;">
                       <div class="row-weapon">${armamento}</div>
                       <div class="row-mags">
                         <div class="cmd-input-wrapper">
-                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)">-</button>
-                          <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
-                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)">+</button>
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)" ${disabledAttr}>-</button>
+                          <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" ${disabledAttr} />
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)" ${disabledAttr}>+</button>
                         </div>
                       </div>
                       <div class="row-drinks">
                         <div class="cmd-input-wrapper">
-                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)">-</button>
-                          <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
-                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)">+</button>
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)" ${disabledAttr}>-</button>
+                          <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" ${disabledAttr} />
+                          <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)" ${disabledAttr}>+</button>
                         </div>
                       </div>
                       <div class="row-prices">
@@ -727,24 +739,25 @@ function renderComandas() {
               `;
             } else {
               return `
-                <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
-                  <div class="row-name" style="display:flex;align-items:center;gap:5px;">
+                <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'} ${isPaid ? 'cmd-row-paid' : ''}" data-player-id="${p.id}">
+                  <div class="row-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
                     ${p.isTeam ? '🪖 ' : ''}
                     ${esc(p.name)}
+                    ${isPaid ? '<span class="badge-pago-sm">✅ PAGO</span>' : ''}
                   </div>
                   <div class="row-weapon">${armamento}</div>
                   <div class="row-mags">
                     <div class="cmd-qty-controls">
-                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)">-</button>
-                      <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
-                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)">+</button>
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)" ${disabledAttr}>-</button>
+                      <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" ${disabledAttr} />
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)" ${disabledAttr}>+</button>
                     </div>
                   </div>
                   <div class="row-drinks">
                     <div class="cmd-input-wrapper">
-                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)">-</button>
-                      <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" />
-                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)">+</button>
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', -1)" ${disabledAttr}>-</button>
+                      <input type="number" min="0" value="${p.drinks || 0}" class="cmd-input cmd-drinks" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'drinks', this.value)" ${disabledAttr} />
+                      <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'drinks', 1)" ${disabledAttr}>+</button>
                     </div>
                   </div>
                   <div class="row-prices">
@@ -753,6 +766,7 @@ function renderComandas() {
                     <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
                   </div>
                   <div class="row-total cmd-total" data-player-id="${p.id}"><strong>${brl(total)}</strong></div>
+                  <div class="row-action">${closeBtn}</div>
                 </div>
               `;
             }
@@ -761,6 +775,19 @@ function renderComandas() {
       </div>
     `;
   }).join('');
+}
+
+// ─ Fechar comanda do jogador ────────────────────────────────────
+function closePlayerComanda(playerId) {
+  const p = attendance.find(x => x.id === playerId);
+  if (!p || p.paid) return;
+  if (!confirm(`Fechar comanda de ${p.name}?\nTotal: ${brl(calcTotal(p))}\n\nConfirmar pagamento?`)) return;
+  p.paid   = true;
+  p.paidAt = Date.now();
+  persist();
+  renderComandas();
+  updateDashboard();
+  toast(`✅ Comanda de ${p.name} fechada!`);
 }
 
 // ─ Editar campo na comanda ──────────────────────────────────────
@@ -1559,12 +1586,11 @@ function saveMembro(e) {
 function deleteMembroConfirm(id) {
   const m = time.find(x => x.id === id);
   if (!m) return;
-  showConfirm(`Remover ${m.name} do time?`, () => {
-    time = time.filter(x => x.id !== id);
-    persist();
-    renderTime();
-    toast('🗑️ Membro removido do time!');
-  });
+  if (!confirm(`Remover ${m.name} do time?`)) return;
+  time = time.filter(x => x.id !== id);
+  persist();
+  renderTime();
+  toast('🗑️ Membro removido do time!');
 }
 
 // ════════════════════════════════════════════════════════════════
