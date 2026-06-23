@@ -1,0 +1,17 @@
+/* Tokens semânticos de superfície — base do tema claro/escuro.
+   Valores em triplas RGB (para suportar <alpha-value> no Tailwind). */
+:root {
+  --canvas: 243 247 255;        /* #F3F7FF  claro */
+  --surface: 255 255 255;       /* #FFFFFF  cards/superfícies */
+  --surface-fg: 5 7 50;         /* #050732  texto principal (navy) */
+  --surface-muted: 66 75 82;    /* #424B52  texto secundário */
+  --line: 226 232 240;          /* #E2E8F0  bordas/divisores */
+}
+
+.dark {
+  --canvas: 9 13 26;            /* #090D1A  fundo escuro (navy quase preto) */
+  --surface: 19 26 46;          /* #131A2E  cards no escuro */
+  --surface-fg: 243 247 255;    /* #F3F7FF  texto claro */
+  --surface-muted: 150 165 190; /* #96A5BE  texto secundário claro */
+  --line: 39 50 78;             /* #27324E  bordas no escuro */
+}
