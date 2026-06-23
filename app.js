@@ -18,6 +18,7 @@ const DEFAULTS = {
   fieldFeeOwn:  10,   // com arma própria
   magazinePrice:15,   // por carregador
   drinkPrice:   5,    // por bebida
+  teamDrinkPrice:3,   // por bebida (time)
   username:    'admin',
   password:    'toca2026'
 };
@@ -221,6 +222,9 @@ function getChargeableMags(hasWeapon, magazines) {
 }
 
 function calcTotal(p) {
+  if (p.isTeam) {
+    return (p.drinks || 0) * (settings.teamDrinkPrice ?? 3);
+  }
   const field   = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
   const mags    = getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
   const drinks  = (p.drinks    || 0) * settings.drinkPrice;
@@ -342,6 +346,7 @@ function openAddPlayerModal() {
   q('#p-date').value      = q('#attendance-date-filter').value;
   q('#p-magazines').value = 0;
   q('#p-drinks').value    = 0;
+  q('#p-is-team').checked = false;
   q('#modal-player-title').textContent = '🎯 Adicionar Jogador';
   setWeaponChoice(false);
   updatePlayerPreview();
@@ -360,6 +365,7 @@ function editPlayer(id) {
   q('#p-date').value         = p.date;
   q('#p-magazines').value    = p.magazines || 0;
   q('#p-drinks').value       = p.drinks    || 0;
+  q('#p-is-team').checked    = !!p.isTeam;
   q('#modal-player-title').textContent = '✏️ Editar Jogador';
   setWeaponChoice(p.hasWeapon);
   updatePlayerPreview();
@@ -387,13 +393,14 @@ function updateWeaponButtonPrices() {
 
 // ─ Preview ─────────────────────────────────────────────────────
 function updatePlayerPreview() {
+  const isTeam    = q('#p-is-team').checked;
   const hasWeapon = q('#p-has-weapon').value === 'true';
   const mags      = parseInt(q('#p-magazines').value) || 0;
   const drinks    = parseInt(q('#p-drinks').value)    || 0;
 
-  const field     = hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-  const magCost   = getChargeableMags(hasWeapon, mags) * settings.magazinePrice;
-  const drinkCost = drinks * settings.drinkPrice;
+  const field     = isTeam ? 0 : (hasWeapon ? settings.fieldFeeOwn : settings.weaponRental);
+  const magCost   = isTeam ? 0 : getChargeableMags(hasWeapon, mags) * settings.magazinePrice;
+  const drinkCost = drinks * (isTeam ? (settings.teamDrinkPrice ?? 3) : settings.drinkPrice);
   const total     = field + magCost + drinkCost;
 
   q('#bk-field').textContent  = brl(field);
@@ -410,15 +417,16 @@ function savePlayer(e) {
   const hasWeapon = q('#p-has-weapon').value === 'true';
   const magazines = parseInt(q('#p-magazines').value) || 0;
   const drinks    = parseInt(q('#p-drinks').value)    || 0;
+  const isTeam    = q('#p-is-team').checked;
 
   if (!name || !date) return;
 
   if (editingPlayerId) {
     const idx = attendance.findIndex(x => x.id === editingPlayerId);
-    if (idx !== -1) attendance[idx] = { ...attendance[idx], name, date, hasWeapon, magazines, drinks };
+    if (idx !== -1) attendance[idx] = { ...attendance[idx], name, date, hasWeapon, magazines, drinks, isTeam };
     toast('Jogador atualizado! ✅');
   } else {
-    attendance.push({ id: uid(), name, date, hasWeapon, magazines, drinks });
+    attendance.push({ id: uid(), name, date, hasWeapon, magazines, drinks, isTeam });
     toast('Jogador adicionado! ✅');
   }
 
@@ -669,10 +677,10 @@ function renderComandas() {
           </div>
           `}
           ${records.map((p, pIdx) => {
-            const armamento = p.hasWeapon ? '🪖 Própria' : '🔫 Alugada';
-            const precoArma = p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental;
-            const precoMags = getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
-            const precoBebidas = (p.drinks || 0) * settings.drinkPrice;
+            const armamento = p.isTeam ? '🪖 Membro do Time' : (p.hasWeapon ? '🪖 Própria' : '🔫 Alugada');
+            const precoArma = p.isTeam ? 0 : (p.hasWeapon ? settings.fieldFeeOwn : settings.weaponRental);
+            const precoMags = p.isTeam ? 0 : getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
+            const precoBebidas = (p.drinks || 0) * (p.isTeam ? (settings.teamDrinkPrice ?? 3) : settings.drinkPrice);
             const total = calcTotal(p);
             
             const isCollapsible = records.length > 4;
@@ -681,7 +689,7 @@ function renderComandas() {
               return `
                 <details class="cmd-details ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
                   <summary class="cmd-summary">
-                    <span class="cmd-summary-name">${esc(p.name)}</span>
+                    <span class="cmd-summary-name">${p.isTeam ? '🪖 ' : ''}${esc(p.name)}</span>
                     <strong class="cmd-total" data-player-id="${p.id}">${brl(total)}</strong>
                   </summary>
                   <div class="cmd-details-body">
@@ -706,6 +714,13 @@ function renderComandas() {
                         <span class="price cmd-mag-price" data-player-id="${p.id}">${brl(precoMags)}</span>
                         <span class="price cmd-drink-price" data-player-id="${p.id}">${brl(precoBebidas)}</span>
                       </div>
+                      <div class="cmd-expanded-row">
+                        <span>Bebidas (${p.drinks || 0}x)</span>
+                        <span>${brl(precoBebidas)}</span>
+                      </div>
+                      ${p.isTeam ? `<div class="cmd-expanded-row" style="color:var(--green-500);font-size:0.85rem">
+                        <span><em>Desconto de Time Aplicado</em></span>
+                      </div>` : ''}
                     </div>
                   </div>
                 </details>
@@ -713,10 +728,13 @@ function renderComandas() {
             } else {
               return `
                 <div class="comanda-row ${pIdx % 2 === 0 ? '' : 'alt'}" data-player-id="${p.id}">
-                  <div class="row-name">${esc(p.name)}</div>
+                  <div class="row-name" style="display:flex;align-items:center;gap:5px;">
+                    ${p.isTeam ? '🪖 ' : ''}
+                    ${esc(p.name)}
+                  </div>
                   <div class="row-weapon">${armamento}</div>
                   <div class="row-mags">
-                    <div class="cmd-input-wrapper">
+                    <div class="cmd-qty-controls">
                       <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', -1)">-</button>
                       <input type="number" min="0" value="${p.magazines || 0}" class="cmd-input cmd-mags" data-player-id="${p.id}" onchange="updateComandaField('${p.id}', 'magazines', this.value)" />
                       <button class="btn-cmd-adj" onclick="adjustComandaField('${p.id}', 'magazines', 1)">+</button>
@@ -1058,6 +1076,7 @@ function loadSettingsUI() {
   q('#cfg-field-own').value     = settings.fieldFeeOwn;
   q('#cfg-magazine').value      = settings.magazinePrice;
   q('#cfg-drink').value         = settings.drinkPrice;
+  q('#cfg-team-drink').value    = settings.teamDrinkPrice ?? 3;
   q('#cfg-username').value      = settings.username;
   q('#cfg-password').value      = '';
 }
@@ -1067,8 +1086,9 @@ function saveConfig() {
   const fo = parseFloat(q('#cfg-field-own').value);
   const mp = parseFloat(q('#cfg-magazine').value);
   const dp = parseFloat(q('#cfg-drink').value);
+  const tp = parseFloat(q('#cfg-team-drink').value);
 
-  if ([wr, fo, mp, dp].some(v => isNaN(v) || v < 0)) {
+  if ([wr, fo, mp, dp, tp].some(v => isNaN(v) || v < 0)) {
     toast('Valores inválidos!', 'error');
     return;
   }
@@ -1077,6 +1097,7 @@ function saveConfig() {
   settings.fieldFeeOwn   = fo;
   settings.magazinePrice = mp;
   settings.drinkPrice    = dp;
+  settings.teamDrinkPrice= tp;
 
   // Refresh weapon button prices in modal
   updateWeaponButtonPrices();
@@ -1319,6 +1340,7 @@ function setupListeners() {
   q('#btn-has-weapon').addEventListener('click', () => setWeaponChoice(true));
   q('#p-magazines').addEventListener('input', updatePlayerPreview);
   q('#p-drinks').addEventListener('input',    updatePlayerPreview);
+  q('#p-is-team').addEventListener('change',  updatePlayerPreview);
 
   // Financeiro
   qAll('.period-btn').forEach(btn => {
