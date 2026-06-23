@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   open: boolean;
@@ -17,18 +18,20 @@ export function Modal({ open, title, onClose, children, size = 'default' }: Moda
   }, [open, onClose]);
 
   if (!open) return null;
-  const boxCls = size === 'sm' ? 'modal-box modal-box-sm'
-    : size === 'large' ? 'modal-box modal-box-large' : 'modal-box';
+  const w = size === 'sm' ? 'max-w-sm' : size === 'large' ? 'max-w-3xl' : 'max-w-lg';
 
   return (
-    <div className="modal" role="dialog" aria-modal="true">
-      <div className="modal-overlay" onClick={onClose} />
-      <div className={boxCls}>
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button className="modal-close" aria-label="Fechar" onClick={onClose}>✕</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className={`relative max-h-[90vh] w-full ${w} overflow-hidden rounded-2xl border border-line bg-surface text-surface-fg shadow-2xl`}>
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h3 className="font-highlight text-lg font-bold">{title}</h3>
+          <button onClick={onClose} aria-label="Fechar"
+            className="rounded-full p-1.5 text-surface-muted transition-colors hover:bg-canvas hover:text-surface-fg">
+            <X size={18} />
+          </button>
         </div>
-        {children}
+        <div className="max-h-[calc(90vh-64px)] overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   );

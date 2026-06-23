@@ -18,7 +18,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ toast }}>
       {children}
       {state && (
-        <div className={`toast${state.type === 'error' ? ' error' : ''}`} role="status" aria-live="polite">
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg font-body ${
+            state.type === 'error' ? 'bg-negative' : 'bg-secondary'
+          }`}
+        >
           {state.msg}
         </div>
       )}
