@@ -8,7 +8,8 @@ const KEYS = {
   expenses:   'tdl_expenses',
   settings:   'tdl_settings',
   session:    'tdl_session',
-  socios:     'tdl_socios'
+  socios:     'tdl_socios',
+  time:       'tdl_time'
 };
 
 // ── DEFAULT SETTINGS ──────────────────────────────────────────────
@@ -25,11 +26,13 @@ const DEFAULTS = {
 let attendance  = [];
 let expenses    = [];
 let socios      = [];
+let time        = [];
 let settings    = { ...DEFAULTS };
 let currentPeriod      = 'month';
 let editingPlayerId    = null;
 let editingExpenseId   = null;
 let editingSocioId     = null;
+let editingMembroId    = null;
 let confirmCallback    = null;
 
 // ════════════════════════════════════════════════════════════════
@@ -47,10 +50,11 @@ function loadData() {
     attendance = JSON.parse(localStorage.getItem(KEYS.attendance) || '[]');
     expenses   = JSON.parse(localStorage.getItem(KEYS.expenses)   || '[]');
     socios     = JSON.parse(localStorage.getItem(KEYS.socios)     || '[]');
+    time       = JSON.parse(localStorage.getItem(KEYS.time)       || '[]');
     const saved = JSON.parse(localStorage.getItem(KEYS.settings)  || '{}');
     settings   = { ...DEFAULTS, ...saved };
   } catch (e) {
-    attendance = []; expenses = []; socios = []; settings = { ...DEFAULTS };
+    attendance = []; expenses = []; socios = []; time = []; settings = { ...DEFAULTS };
   }
 }
 
@@ -58,6 +62,7 @@ function persist() {
   localStorage.setItem(KEYS.attendance, JSON.stringify(attendance));
   localStorage.setItem(KEYS.expenses,   JSON.stringify(expenses));
   localStorage.setItem(KEYS.socios,     JSON.stringify(socios));
+  localStorage.setItem(KEYS.time,       JSON.stringify(time));
   localStorage.setItem(KEYS.settings,   JSON.stringify(settings));
 }
 
@@ -133,6 +138,7 @@ function switchTab(tab) {
     financeiro:    'Financeiro',
     comandas:      'Comandas',
     socios:        'Sócios',
+    time:          '🪖 Nosso Time',
     configuracoes: 'Configurações'
   };
   q('#page-title').textContent = TITLES[tab] || tab;
@@ -141,6 +147,7 @@ function switchTab(tab) {
   if (tab === 'financeiro')    renderFinanceiro();
   if (tab === 'comandas')      renderComandas();
   if (tab === 'socios')        renderSocios();
+  if (tab === 'time')          renderTime();
   if (tab === 'configuracoes') loadSettingsUI();
 }
 
@@ -1385,6 +1392,170 @@ function esc(str)  {
 }
 
 // ════════════════════════════════════════════════════════════════
+// TIME (SQUAD) MODULE
+// ════════════════════════════════════════════════════════════════
+
+const PATENTE_ORDER = ['Soldado','Cabo','Sargento','Tenente','Capitão','Major','Coronel','General'];
+
+function patenteInfo(patente) {
+  const map = {
+    'Soldado':  { icon: '🟢', cls: 'patente-soldado'  },
+    'Cabo':     { icon: '🔵', cls: 'patente-cabo'     },
+    'Sargento': { icon: '🟡', cls: 'patente-sargento' },
+    'Tenente':  { icon: '🟠', cls: 'patente-tenente'  },
+    'Capitão':  { icon: '🔴', cls: 'patente-capitao'  },
+    'Major':    { icon: '⭐', cls: 'patente-major'    },
+    'Coronel':  { icon: '⭐⭐', cls: 'patente-coronel' },
+    'General':  { icon: '⭐⭐⭐', cls: 'patente-general' },
+  };
+  return map[patente] || { icon: '🎖️', cls: 'patente-soldado' };
+}
+
+function renderTime() {
+  const searchText  = q('#time-search').value.toLowerCase().trim();
+  const patenteFilter = q('#time-patente-filter').value;
+  const grid = q('#time-grid');
+
+  let members = [...time];
+
+  if (searchText) {
+    members = members.filter(m =>
+      m.name.toLowerCase().includes(searchText) ||
+      (m.nickname || '').toLowerCase().includes(searchText)
+    );
+  }
+  if (patenteFilter !== 'all') {
+    members = members.filter(m => m.patente === patenteFilter);
+  }
+
+  // Sort by rank order (highest first), then name
+  members.sort((a, b) => {
+    const ri = PATENTE_ORDER.indexOf(b.patente) - PATENTE_ORDER.indexOf(a.patente);
+    return ri !== 0 ? ri : a.name.localeCompare(b.name);
+  });
+
+  if (members.length === 0) {
+    grid.innerHTML = '<p class="empty-state">Nenhum membro encontrado</p>';
+    return;
+  }
+
+  grid.innerHTML = members.map(m => {
+    const pi = patenteInfo(m.patente);
+    const initials = (m.name || '?').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+    const joinFmt  = m.joinDate ? fmtDate(m.joinDate) : '—';
+    return `
+      <div class="membro-card fade-in">
+        <div class="membro-card-header">
+          <div class="membro-avatar">${initials}</div>
+          <div class="membro-header-info">
+            <div class="membro-name">${esc(m.name)}</div>
+            ${m.nickname ? `<div class="membro-callsign">"${esc(m.nickname)}"</div>` : ''}
+            <span class="membro-patente-badge ${pi.cls}">${pi.icon} ${esc(m.patente)}</span>
+          </div>
+        </div>
+        <div class="membro-card-body">
+          ${m.weapon ? `<div class="membro-info-row"><span>🔫</span><span><strong>${esc(m.weapon)}</strong></span></div>` : ''}
+          ${m.phone  ? `<div class="membro-info-row"><span>📞</span><span>${esc(m.phone)}</span></div>` : ''}
+          <div class="membro-info-row"><span>📅</span><span>No time desde <strong>${joinFmt}</strong></span></div>
+          ${m.notes  ? `<div class="membro-info-row"><span>📝</span><span style="font-size:.78rem; color:var(--text-300)">${esc(m.notes)}</span></div>` : ''}
+        </div>
+        <div class="membro-card-footer">
+          <button class="btn-icon btn-secondary" onclick="openMembroModal('${m.id}')">✏️ Editar</button>
+          <button class="btn-icon btn-secondary" style="color:var(--danger)" onclick="deleteMembroConfirm('${m.id}')">🗑️ Remover</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openMembroModal(id) {
+  editingMembroId = id || null;
+  q('#modal-membro-title').textContent = id ? '✏️ Editar Membro' : '🪖 Novo Membro';
+  q('#m-id').value = '';
+  q('#m-name').value = '';
+  q('#m-nickname').value = '';
+  q('#m-patente').value = '';
+  q('#m-weapon').value = '';
+  q('#m-join-date').value = todayStr();
+  q('#m-phone').value = '';
+  q('#m-notes').value = '';
+
+  if (id) {
+    const m = time.find(x => x.id === id);
+    if (m) {
+      q('#m-id').value       = m.id;
+      q('#m-name').value     = m.name;
+      q('#m-nickname').value = m.nickname || '';
+      q('#m-patente').value  = m.patente;
+      q('#m-weapon').value   = m.weapon || '';
+      q('#m-join-date').value= m.joinDate || todayStr();
+      q('#m-phone').value    = m.phone || '';
+      q('#m-notes').value    = m.notes || '';
+    }
+  }
+
+  q('#modal-membro').classList.remove('hidden');
+  q('#m-name').focus();
+}
+
+function closeMembroModal() {
+  q('#modal-membro').classList.add('hidden');
+  editingMembroId = null;
+}
+
+function saveMembro(e) {
+  e.preventDefault();
+  const name    = q('#m-name').value.trim();
+  const patente = q('#m-patente').value;
+  if (!name || !patente) { toast('⚠️ Nome e Patente são obrigatórios!'); return; }
+
+  const membro = {
+    id:       editingMembroId || uid(),
+    name,
+    nickname: q('#m-nickname').value.trim(),
+    patente,
+    weapon:   q('#m-weapon').value.trim(),
+    joinDate: q('#m-join-date').value || todayStr(),
+    phone:    q('#m-phone').value.trim(),
+    notes:    q('#m-notes').value.trim(),
+  };
+
+  if (editingMembroId) {
+    const idx = time.findIndex(x => x.id === editingMembroId);
+    if (idx !== -1) time[idx] = membro;
+    toast('✅ Membro atualizado!');
+  } else {
+    time.push(membro);
+    toast('✅ Membro adicionado ao time!');
+  }
+
+  persist();
+  closeMembroModal();
+  renderTime();
+}
+
+function deleteMembroConfirm(id) {
+  const m = time.find(x => x.id === id);
+  if (!m) return;
+  showConfirm(`Remover ${m.name} do time?`, () => {
+    time = time.filter(x => x.id !== id);
+    persist();
+    renderTime();
+    toast('🗑️ Membro removido do time!');
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
 // BOOT
 // ════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  // Time tab listeners (added after DOM ready)
+  q('#btn-add-membro').addEventListener('click', () => openMembroModal(null));
+  q('#close-membro-modal').addEventListener('click', closeMembroModal);
+  q('#cancel-membro-modal').addEventListener('click', closeMembroModal);
+  q('#modal-membro-overlay').addEventListener('click', closeMembroModal);
+  q('#membro-form').addEventListener('submit', saveMembro);
+  q('#time-search').addEventListener('input', renderTime);
+  q('#time-patente-filter').addEventListener('change', renderTime);
+});

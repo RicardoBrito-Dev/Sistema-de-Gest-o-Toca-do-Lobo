@@ -68,6 +68,9 @@
         <button class="nav-item" data-tab="socios" id="nav-socios">
           <span class="nav-icon">👥</span><span class="nav-label">Sócios</span>
         </button>
+        <button class="nav-item" data-tab="time" id="nav-time">
+          <span class="nav-icon">🪖</span><span class="nav-label">Time</span>
+        </button>
         <button class="nav-item" data-tab="configuracoes" id="nav-configuracoes">
           <span class="nav-icon">⚙️</span><span class="nav-label">Configurações</span>
         </button>
@@ -98,6 +101,10 @@
       <button class="mobile-nav-item" data-tab="socios" id="mnav-socios">
         <span class="mn-icon">👥</span>
         <span>Sócios</span>
+      </button>
+      <button class="mobile-nav-item" data-tab="time" id="mnav-time">
+        <span class="mn-icon">🪖</span>
+        <span>Time</span>
       </button>
       <button class="mobile-nav-item" data-tab="configuracoes" id="mnav-configuracoes">
         <span class="mn-icon">⚙️</span>
@@ -343,6 +350,33 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- ─── TAB: TIME ────────────────────── -->
+      <section id="tab-time" class="tab-content hidden">
+        <div class="tab-toolbar">
+          <div class="filter-group" style="flex:1; min-width:200px;">
+            <input type="text" id="time-search" placeholder="🔍 Buscar membro..." class="search-input" style="width:100%" />
+          </div>
+          <div class="filter-group">
+            <select id="time-patente-filter" class="config-input" style="width:170px">
+              <option value="all">Todas as Patentes</option>
+              <option value="Soldado">🟢 Soldado</option>
+              <option value="Cabo">🔵 Cabo</option>
+              <option value="Sargento">🟡 Sargento</option>
+              <option value="Tenente">🟠 Tenente</option>
+              <option value="Capitão">🔴 Capitão</option>
+              <option value="Major">⭐ Major</option>
+              <option value="Coronel">⭐⭐ Coronel</option>
+              <option value="General">⭐⭐⭐ General</option>
+            </select>
+          </div>
+          <button id="btn-add-membro" class="btn-primary">➕ Novo Membro</button>
+        </div>
+
+        <div id="time-grid" class="time-grid">
+          <p class="empty-state">Nenhum membro cadastrado no time</p>
         </div>
       </section>
 
@@ -612,6 +646,71 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════
+       MODAL: ADICIONAR / EDITAR MEMBRO DO TIME
+  ════════════════════════════════════════════ -->
+  <div id="modal-membro" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="modal-membro-overlay"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-membro-title">🪖 Novo Membro</h3>
+        <button class="modal-close" id="close-membro-modal" aria-label="Fechar">✕</button>
+      </div>
+      <form id="membro-form" novalidate>
+        <input type="hidden" id="m-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-name">Nome Completo *</label>
+            <input type="text" id="m-name" placeholder="Nome do jogador" required />
+          </div>
+          <div class="form-group">
+            <label for="m-nickname">Codinome / Callsign</label>
+            <input type="text" id="m-nickname" placeholder="Ex: Wolf, Shadow..." />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-patente">Patente *</label>
+            <select id="m-patente" class="config-input" required>
+              <option value="">Selecionar patente...</option>
+              <option value="Soldado">🟢 Soldado</option>
+              <option value="Cabo">🔵 Cabo</option>
+              <option value="Sargento">🟡 Sargento</option>
+              <option value="Tenente">🟠 Tenente</option>
+              <option value="Capitão">🔴 Capitão</option>
+              <option value="Major">⭐ Major</option>
+              <option value="Coronel">⭐⭐ Coronel</option>
+              <option value="General">⭐⭐⭐ General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="m-weapon">Arma Principal</label>
+            <input type="text" id="m-weapon" placeholder="Ex: M4A1, AK-47..." />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="m-join-date">Entrada no Time *</label>
+            <input type="date" id="m-join-date" required />
+          </div>
+          <div class="form-group">
+            <label for="m-phone">Telefone</label>
+            <input type="tel" id="m-phone" placeholder="(00) 00000-0000" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="m-notes">Observações</label>
+          <textarea id="m-notes" placeholder="Notas sobre o membro..." rows="2" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-input); color:var(--text-100); font-family:var(--ff-body); outline:none; resize:vertical;"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-membro-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">💾 Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

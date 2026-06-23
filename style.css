@@ -2022,3 +2022,75 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
   .stat-icon  { font-size: 1.35rem; }
   .app-header h1 { font-size: 1rem; }
 }
+
+/* ----------------------------------------------------------------
+   TIME (SQUAD) TAB
+---------------------------------------------------------------- */
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+.membro-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.membro-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(74,138,64,.2);
+}
+.membro-card-header {
+  padding: 20px 20px 14px;
+  background: linear-gradient(135deg, rgba(74,138,64,.18) 0%, rgba(30,80,24,.3) 100%);
+  border-bottom: 1px solid rgba(74,138,64,.15);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.membro-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green-700), var(--green-500));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; flex-shrink: 0;
+  border: 2px solid rgba(74,138,64,.4);
+}
+.membro-header-info { flex: 1; min-width: 0; }
+.membro-name {
+  font-size: 1.05rem; font-weight: 700; color: var(--text-100);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.membro-callsign { font-size: .8rem; color: var(--green-300); font-style: italic; margin-top: 2px; }
+.membro-patente-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: .75rem; font-weight: 700; margin-top: 6px; letter-spacing: .03em;
+}
+.patente-soldado  { background: rgba(74,138,64,.25);  color: #7dca72; }
+.patente-cabo     { background: rgba(59,130,246,.25); color: #93c5fd; }
+.patente-sargento { background: rgba(234,179,8,.25);  color: #fde047; }
+.patente-tenente  { background: rgba(249,115,22,.25); color: #fdba74; }
+.patente-capitao  { background: rgba(239,68,68,.25);  color: #fca5a5; }
+.patente-major    { background: rgba(168,85,247,.25); color: #d8b4fe; }
+.patente-coronel  { background: rgba(236,72,153,.25); color: #f9a8d4; }
+.patente-general  { background: rgba(245,158,11,.35); color: #fcd34d; border: 1px solid rgba(245,158,11,.5); }
+.membro-card-body { padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+.membro-info-row { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text-300); }
+.membro-info-row span:first-child { font-size: 1rem; flex-shrink: 0; }
+.membro-info-row strong { color: var(--text-100); font-weight: 500; }
+.membro-card-footer { display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid rgba(74,138,64,.08); }
+.membro-card-footer .btn-icon { flex: 1; justify-content: center; font-size: .8rem; padding: 8px 10px; }
+
+@media (max-width: 768px) {
+  .time-grid { grid-template-columns: 1fr 1fr; padding: 12px; gap: 10px; }
+  .membro-card-header { padding: 14px 14px 10px; gap: 10px; }
+  .membro-avatar { width: 44px; height: 44px; font-size: 1.3rem; }
+  .membro-name { font-size: .95rem; }
+}
+@media (max-width: 420px) {
+  .time-grid { grid-template-columns: 1fr; }
+}
