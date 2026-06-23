@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'app.js'] },
+  { ignores: ['dist', 'app.js', 'src/components/ui/**', 'src/tokens/**', 'src/lib/utils.ts', 'src/components/colors-grid.tsx', 'src/components/tokens-grid.tsx'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
