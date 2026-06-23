@@ -59,4 +59,5 @@ export const ROUTES: NavRoute[] = [
   { path: '/socios',        tab: 'socios',        icon: '👥', label: 'Sócios',        title: 'Sócios' },
   { path: '/time',          tab: 'time',          icon: '🪖', label: 'Time',          title: '🪖 Nosso Time' },
   { path: '/configuracoes', tab: 'configuracoes', icon: '⚙️', label: 'Configurações', title: 'Configurações' },
+  { path: '/ajuda',         tab: 'ajuda',         icon: '❓', label: 'Ajuda',          title: 'Ajuda · FAQ' },
 ];
