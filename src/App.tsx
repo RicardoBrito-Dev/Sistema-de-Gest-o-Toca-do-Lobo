@@ -21,11 +21,11 @@ export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
-        <div id="app-page" className="page">
+        <div className="min-h-dvh bg-canvas font-body text-surface-fg">
           <Sidebar onLogout={logout} />
-          <MobileNav />
-          <main className="main-content">
+          <div className="flex min-h-dvh flex-col md:pl-60">
             <Header onLogout={logout} />
+            <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/presenca" element={<AttendancePage />} />
@@ -36,7 +36,9 @@ export default function App() {
               <Route path="/configuracoes" element={<SettingsPage />} />
               <Route path="/ajuda" element={<HelpPage />} />
             </Routes>
-          </main>
+            </main>
+          </div>
+          <MobileNav />
         </div>
       </BrowserRouter>
     </ToastProvider>

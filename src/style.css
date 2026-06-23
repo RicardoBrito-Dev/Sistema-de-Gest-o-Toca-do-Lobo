@@ -77,7 +77,7 @@ button { cursor: pointer; }
 a { color: inherit; }
 
 /* ── UTILITIES ─────────────────────────────────────────────────── */
-.hidden { display: none !important; }
+.hidden { display: none; }
 .text-center { text-align: center; }
 .text-right  { text-align: right; }
 .positive { color: var(--success) !important; }
