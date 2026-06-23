@@ -82,34 +82,42 @@
 
     <!-- MOBILE BOTTOM NAV -->
     <nav class="mobile-nav" id="mobile-nav" aria-label="Navegação principal">
-      <button class="mobile-nav-item active" data-tab="dashboard" id="mnav-dashboard">
-        <span class="mn-icon">📊</span>
-        <span>Dashboard</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="presenca" id="mnav-presenca">
-        <span class="mn-icon">📋</span>
-        <span>Presenças</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="financeiro" id="mnav-financeiro">
-        <span class="mn-icon">💰</span>
-        <span>Financeiro</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="comandas" id="mnav-comandas">
-        <span class="mn-icon">📝</span>
-        <span>Comandas</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="socios" id="mnav-socios">
-        <span class="mn-icon">👥</span>
-        <span>Sócios</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="time" id="mnav-time">
-        <span class="mn-icon">🪖</span>
-        <span>Time</span>
-      </button>
-      <button class="mobile-nav-item" data-tab="configuracoes" id="mnav-configuracoes">
-        <span class="mn-icon">⚙️</span>
-        <span>Config.</span>
-      </button>
+      <!-- Linha 1: 4 principais -->
+      <div class="mobile-nav-row">
+        <button class="mobile-nav-item active" data-tab="dashboard" id="mnav-dashboard">
+          <span class="mn-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="mobile-nav-item" data-tab="presenca" id="mnav-presenca">
+          <span class="mn-icon">📋</span>
+          <span>Presenças</span>
+        </button>
+        <button class="mobile-nav-item" data-tab="financeiro" id="mnav-financeiro">
+          <span class="mn-icon">💰</span>
+          <span>Financeiro</span>
+        </button>
+        <button class="mobile-nav-item" data-tab="comandas" id="mnav-comandas">
+          <span class="mn-icon">📝</span>
+          <span>Comandas</span>
+        </button>
+      </div>
+      <!-- Divisor -->
+      <div class="mobile-nav-divider"></div>
+      <!-- Linha 2: 3 secundários -->
+      <div class="mobile-nav-row">
+        <button class="mobile-nav-item" data-tab="socios" id="mnav-socios">
+          <span class="mn-icon">👥</span>
+          <span>Sócios</span>
+        </button>
+        <button class="mobile-nav-item" data-tab="time" id="mnav-time">
+          <span class="mn-icon">🪖</span>
+          <span>Time</span>
+        </button>
+        <button class="mobile-nav-item" data-tab="configuracoes" id="mnav-configuracoes">
+          <span class="mn-icon">⚙️</span>
+          <span>Config.</span>
+        </button>
+      </div>
     </nav>
 
     <!-- MAIN CONTENT -->
