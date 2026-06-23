@@ -1,213 +1,89 @@
-import type { CSSProperties, ReactNode } from 'react';
-
-const itemStyle: CSSProperties = { borderBottom: '1px solid var(--border)', padding: '12px 4px' };
-const summaryStyle: CSSProperties = { cursor: 'pointer', fontWeight: 600, color: 'var(--text-100)', fontFamily: 'var(--ff-title)', listStyle: 'revert' };
-const answerStyle: CSSProperties = { marginTop: 10, color: 'var(--text-200)', lineHeight: 1.65, fontSize: '.92rem' };
-const ulStyle: CSSProperties = { margin: '6px 0 0', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 4 };
+import { ChevronDown } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Card } from '../../components/Card';
 
 function Faq({ q, children }: { q: string; children: ReactNode }) {
   return (
-    <details style={itemStyle}>
-      <summary style={summaryStyle}>{q}</summary>
-      <div style={answerStyle}>{children}</div>
+    <details className="group border-b border-line py-3 last:border-0">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium text-surface-fg">
+        <span>{q}</span>
+        <ChevronDown size={16} className="shrink-0 text-surface-muted transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="mt-2 text-sm leading-relaxed text-surface-muted">{children}</div>
     </details>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card className="p-5">
+      <h3 className="mb-1 font-highlight text-base font-bold text-surface-fg">{title}</h3>
+      {children}
+    </Card>
   );
 }
 
 export function HelpPage() {
   return (
-    <section className="tab-content active">
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">❓ Central de Ajuda · FAQ</h3>
-        <p style={{ color: 'var(--text-200)', lineHeight: 1.65 }}>
-          Tudo o que o sistema faz e como usar. Clique em cada pergunta para expandir a resposta.
-          O <strong>Toca do Lobo</strong> é um sistema de gestão para campo de Airsoft: controla
-          presenças, comandas, financeiro, sócios e o time — direto no navegador, sem servidor.
+    <div className="flex max-w-3xl flex-col gap-4">
+      <Card className="p-5">
+        <h2 className="mb-2 font-highlight text-lg font-bold text-surface-fg">Central de Ajuda · FAQ</h2>
+        <p className="text-sm leading-relaxed text-surface-muted">
+          Tudo o que o sistema faz e como usar. Clique em cada pergunta para expandir. O <strong>Toca do Lobo</strong> é
+          um sistema de gestão para campo de Airsoft (presenças, comandas, financeiro, sócios e time), rodando direto no
+          navegador, sem servidor.
         </p>
-      </div>
+      </Card>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">🔐 Acesso e Login</h3>
-        <Faq q="Quais são o usuário e a senha padrão?">
-          Usuário <strong>admin</strong> e senha <strong>toca2026</strong>. Troque-os na aba
-          <strong> Configurações → Credenciais de Acesso</strong>.
-        </Faq>
-        <Faq q="Por quanto tempo fico logado?">
-          A sessão vale enquanto a aba do navegador estiver aberta. Ao fechar a aba ou clicar em
-          <strong> Sair</strong>, é preciso entrar novamente.
-        </Faq>
-        <Faq q="Esqueci a senha. E agora?">
-          Como não há servidor, não existe “recuperar senha”. A senha fica salva no próprio
-          navegador. Se ninguém souber a senha atual, é necessário limpar os dados do site no
-          navegador (o que <em>apaga todos os registros</em>) para voltar ao padrão <strong>admin/toca2026</strong>.
-          Por isso, anote a senha em local seguro ao alterá-la.
-        </Faq>
-      </div>
+      <Section title="🔐 Acesso e Login">
+        <Faq q="Quais são o usuário e a senha padrão?">Usuário <strong>admin</strong> e senha <strong>toca2026</strong>. Troque em <strong>Configurações → Credenciais</strong>.</Faq>
+        <Faq q="Por quanto tempo fico logado?">A sessão vale enquanto a aba estiver aberta. Ao fechar ou clicar em <strong>Sair</strong>, é preciso entrar de novo.</Faq>
+        <Faq q="Esqueci a senha. E agora?">Não há recuperação (sem servidor). A senha fica no navegador. Sem ela, é preciso limpar os dados do site (apaga tudo) para voltar ao padrão. Anote a senha ao alterá-la.</Faq>
+        <Faq q="Tem tema claro e escuro?">Sim — use o botão Sol/Lua no header (ou no login). A preferência é salva no navegador.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">📊 Dashboard</h3>
-        <Faq q="O que o Dashboard mostra?">
-          Um resumo do <strong>mês atual</strong>: total de <strong>Entradas</strong>,
-          <strong> Saídas</strong>, <strong>Saldo</strong> e número de <strong>Jogadores</strong>,
-          além das <strong>últimas presenças</strong> (até 5 datas mais recentes).
-        </Faq>
-        <Faq q="O saldo pode ficar vermelho?">
-          Sim. O saldo é Entradas − Saídas do mês; quando negativo, aparece em vermelho.
-        </Faq>
-      </div>
+      <Section title="📊 Dashboard">
+        <Faq q="O que o Dashboard mostra?">Resumo do mês: Entradas, Saídas, Saldo e nº de Jogadores, mais as últimas presenças.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">📋 Presenças</h3>
-        <Faq q="Como registrar um jogador?">
-          Na aba <strong>Presenças</strong>, escolha a <strong>Data</strong> no topo e clique em
-          <strong> ➕ Adicionar Jogador</strong>. Informe nome, se aluga arma ou usa a própria,
-          carregadores e bebidas. O <strong>total é calculado ao vivo</strong> no rodapé do modal.
-        </Faq>
-        <Faq q="O que é “Jogador é membro do Time”?">
-          Marque essa opção para membros do time: eles ficam <strong>isentos da taxa de campo e de
-          carregadores</strong> e pagam a <strong>bebida com preço de membro do time</strong>.
-        </Faq>
-        <Faq q="Como editar ou excluir um registro?">
-          Use os botões <strong>✏️</strong> (editar) e <strong>🗑️</strong> (excluir) na linha do
-          jogador. A exclusão pede confirmação.
-        </Faq>
-        <Faq q="O que é o resumo do dia?">
-          A faixa acima da tabela soma, para a data selecionada: nº de jogadores, total a receber,
-          carregadores e bebidas.
-        </Faq>
-      </div>
+      <Section title="📋 Presenças">
+        <Faq q="Como registrar um jogador?">Aba Presenças → escolha a Data → <strong>Adicionar Jogador</strong>. O total é calculado ao vivo no modal.</Faq>
+        <Faq q="O que é 'membro do Time'?">Membros ficam isentos de taxa de campo e carregadores, e pagam a bebida com preço de time.</Faq>
+        <Faq q="Como editar/excluir?">Ícones de lápis (editar) e lixeira (excluir) na linha. A exclusão pede confirmação.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">📝 Comandas</h3>
-        <Faq q="De onde vêm as comandas?">
-          São geradas automaticamente a partir das <strong>Presenças</strong>. Adicionou um jogador
-          numa data? Ele aparece na comanda daquela data — sem digitar de novo.
-        </Faq>
-        <Faq q="Como ajustar carregadores e bebidas na comanda?">
-          Use os botões <strong>−</strong> / <strong>+</strong> ou digite o número direto na linha do
-          jogador. O total recalcula na hora e já fica salvo.
-        </Faq>
-        <Faq q="O que faz o botão “✅ Fechar”?">
-          Marca a comanda do jogador como <strong>PAGA</strong> (com o horário do pagamento). Depois
-          de fechada, os campos ficam bloqueados para evitar alterações.
-        </Faq>
-        <Faq q="Como imprimir a comanda?">
-          Clique em <strong>📋 Imprimir</strong> no topo do cartão da data. Abre uma versão formatada
-          pronta para impressão, com o total geral.
-        </Faq>
-        <Faq q="Posso filtrar?">
-          Sim: por <strong>data</strong> e por <strong>nome do jogador</strong> (campo de busca).
-        </Faq>
-      </div>
+      <Section title="📝 Comandas">
+        <Faq q="De onde vêm as comandas?">São geradas automaticamente a partir das Presenças da data selecionada.</Faq>
+        <Faq q="Como ajustar carregadores/bebidas?">Use os botões − / + na linha do jogador; o total recalcula e já salva.</Faq>
+        <Faq q="O que faz 'Fechar'?">Marca a comanda como paga (com horário) e bloqueia alterações.</Faq>
+        <Faq q="Como imprimir?">Botão Imprimir abre uma versão formatada (comprovante) pronta para impressão.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">💰 Financeiro</h3>
-        <Faq q="Quais períodos posso analisar?">
-          <strong>Hoje</strong>, <strong>Esta Semana</strong> e <strong>Este Mês</strong>. Em “Hoje”
-          dá para escolher uma data específica.
-        </Faq>
-        <Faq q="Como as Entradas são detalhadas?">
-          Em quatro linhas: <strong>Taxa do Campo</strong> (arma própria), <strong>Aluguel de Armas</strong>,
-          <strong> Carregadores</strong> e <strong>Bebidas</strong>, com o total do período.
-        </Faq>
-        <Faq q="Como lançar uma despesa?">
-          Clique em <strong>➕ Lançar Despesa</strong>, escolha a categoria (Manutenção, Combustível,
-          Equipamentos, Alimentação, Marketing, Aluguel ou Outros), descreva e informe o valor.
-        </Faq>
-        <Faq q="O que é o Saldo Líquido?">
-          Entradas − Saídas do período, com uma barra visual indicando a proporção do saldo.
-        </Faq>
-      </div>
+      <Section title="💰 Financeiro">
+        <Faq q="Quais períodos posso ver?">Hoje, Esta Semana e Este Mês.</Faq>
+        <Faq q="Como lançar uma despesa?">Botão Lançar Despesa → categoria, descrição e valor.</Faq>
+        <Faq q="O que é o Saldo Líquido?">Entradas − Saídas do período, com barra visual.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">👥 Sócios</h3>
-        <Faq q="Como os sócios se relacionam com as presenças?">
-          As estatísticas (visitas, última visita, dias de inatividade) são calculadas a partir das
-          <strong> Presenças com o mesmo nome</strong> do sócio.
-        </Faq>
-        <Faq q="Como o status de atividade é definido?">
-          <ul style={ulStyle}>
-            <li><strong>✅ Ativo</strong>: visitou nos últimos 30 dias.</li>
-            <li><strong>⚠️ Inativo</strong>: sem visitas há mais de 30 dias.</li>
-            <li><strong>🔴 Crítico</strong>: sem visitas há mais de 60 dias.</li>
-          </ul>
-        </Faq>
-        <Faq q="Posso filtrar os sócios?">
-          Sim, por <strong>status</strong> (ativo/inativo/crítico) e por <strong>nome</strong>.
-        </Faq>
-      </div>
+      <Section title="👥 Sócios">
+        <Faq q="Como o status é calculado?">Pelas presenças com o mesmo nome: <strong>Ativo</strong> (≤30 dias), <strong>Inativo</strong> (30+), <strong>Crítico</strong> (60+).</Faq>
+        <Faq q="Dá pra filtrar?">Sim, por status e por nome.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">🪖 Time</h3>
-        <Faq q="O que é a aba Time?">
-          O cadastro dos membros do time, em cartões, com nome, codinome, patente, arma principal,
-          data de entrada e observações.
-        </Faq>
-        <Faq q="Como os cartões são ordenados?">
-          Por <strong>patente</strong> (da mais alta para a mais baixa): General, Coronel, Major,
-          Capitão, Tenente, Sargento, Cabo, Soldado — e, em empate, por nome.
-        </Faq>
-      </div>
+      <Section title="🪖 Time">
+        <Faq q="O que é a aba Time?">Cadastro dos membros (nome, codinome, patente, arma, entrada, observações), em cards.</Faq>
+        <Faq q="Como os cards são ordenados?">Por patente (da mais alta para a mais baixa) e, em empate, por nome.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">⚙️ Configurações</h3>
-        <Faq q="O que dá para configurar?">
-          A <strong>tabela de preços</strong> (aluguel, taxa de campo, carregador, bebida e bebida de
-          membro do time) e as <strong>credenciais de acesso</strong> (usuário e senha).
-        </Faq>
-        <Faq q="Mudar um preço afeta registros antigos?">
-          Sim — os totais são sempre recalculados com os preços atuais. Ajuste os preços antes de
-          fechar comandas se quiser “congelar” valores diferentes.
-        </Faq>
-      </div>
+      <Section title="🧮 Como o preço é calculado">
+        <Faq q="Qual a fórmula do total?"><strong>Armamento + Carregadores + Bebidas.</strong> Quem aluga ganha os 2 primeiros carregadores de cortesia; com arma própria todos são cobrados.</Faq>
+        <Faq q="E para o Time?">Isento de armamento e carregadores; bebida com preço de membro do time.</Faq>
+      </Section>
 
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">🧮 Como o preço é calculado</h3>
-        <Faq q="Qual a fórmula do total de um jogador?">
-          <strong>Total = Armamento + Carregadores + Bebidas.</strong>
-          <ul style={ulStyle}>
-            <li><strong>Armamento</strong>: quem <em>aluga</em> paga a taxa de aluguel; quem usa <em>arma própria</em> paga a taxa de campo (menor).</li>
-            <li><strong>Carregadores</strong>: quem aluga arma ganha os <strong>2 primeiros de cortesia</strong>; o restante é cobrado por unidade. Com arma própria, todos são cobrados.</li>
-            <li><strong>Bebidas</strong>: cobradas por unidade.</li>
-          </ul>
-        </Faq>
-        <Faq q="E para membros do Time?">
-          Ficam <strong>isentos de armamento e carregadores</strong> e pagam a bebida com o
-          <strong> preço de membro do time</strong> (configurável).
-        </Faq>
-      </div>
-
-      <div className="section-card" style={{ marginBottom: 18 }}>
-        <h3 className="section-title">💾 Dados e Privacidade</h3>
-        <Faq q="Onde os dados ficam salvos?">
-          Tudo é salvo <strong>localmente no navegador</strong> (armazenamento do próprio dispositivo),
-          sem servidor e sem internet. Cada navegador/dispositivo tem seus próprios dados.
-        </Faq>
-        <Faq q="Os dados somem ao recarregar a página?">
-          Não. Eles persistem automaticamente. Só são perdidos se você limpar os dados do site no
-          navegador ou usar um dispositivo/navegador diferente.
-        </Faq>
-        <Faq q="Tem backup?">
-          Não há backup automático em nuvem. Como tudo fica no navegador, evite “limpar dados de
-          navegação” do site e prefira sempre o mesmo dispositivo para o caixa.
-        </Faq>
-      </div>
-
-      <div className="section-card">
-        <h3 className="section-title">🛠️ Problemas comuns</h3>
-        <Faq q="“Os dados sumiram!”">
-          Provavelmente você abriu em outro navegador/dispositivo, em aba anônima, ou limpou os
-          dados do site. Os registros ficam atrelados ao navegador onde foram criados.
-        </Faq>
-        <Faq q="A comanda não deixa eu alterar.">
-          Ela já foi <strong>fechada (PAGA)</strong>. Comandas pagas ficam bloqueadas. Para corrigir,
-          ajuste o registro na aba <strong>Presenças</strong>.
-        </Faq>
-        <Faq q="Um jogador não aparece nas Comandas.">
-          Confira se a <strong>data</strong> selecionada nas Comandas é a mesma do registro de
-          presença, e se a busca por nome não está filtrando demais.
-        </Faq>
-      </div>
-    </section>
+      <Section title="💾 Dados e Privacidade">
+        <Faq q="Onde os dados ficam?">No navegador (localStorage), sem servidor. Cada dispositivo tem seus próprios dados.</Faq>
+        <Faq q="Some ao recarregar?">Não — persiste. Só some se você limpar os dados do site ou usar outro navegador/dispositivo.</Faq>
+      </Section>
+    </div>
   );
 }

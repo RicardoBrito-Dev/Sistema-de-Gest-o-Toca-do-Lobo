@@ -1,6 +1,12 @@
 import { useState } from 'react';
+import { Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '../../components/Card';
 import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
+
+const inputCls = 'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-surface-fg outline-none transition-colors focus:border-secondary';
+const labelCls = 'mb-1 block text-sm font-medium text-surface-fg';
 
 export function SettingsPage() {
   const settings = useStore((s) => s.settings);
@@ -27,58 +33,52 @@ export function SettingsPage() {
     };
     if (Object.values(nums).some((v) => isNaN(v) || v < 0)) { toast('Valores inválidos!', 'error'); return; }
     updateSettings(nums);
-    toast('Preços salvos! ✅');
+    toast('Preços salvos!');
   };
 
   const saveCredentials = () => {
     if (!username.trim()) { toast('Nome de usuário inválido!', 'error'); return; }
     updateSettings({ username: username.trim(), ...(password ? { password } : {}) });
     setPassword('');
-    toast('Credenciais atualizadas! ✅');
+    toast('Credenciais atualizadas!');
   };
 
   const priceField = (key: keyof typeof prices, label: string) => (
-    <div className="config-item">
-      <label htmlFor={`cfg-${key}`}>{label}</label>
-      <div className="input-money"><span>R$</span>
-        <input id={`cfg-${key}`} type="number" min="0" step="0.01" value={prices[key]}
-          onChange={(e) => setPrices((p) => ({ ...p, [key]: e.target.value }))} />
-      </div>
+    <div>
+      <label htmlFor={`cfg-${key}`} className={labelCls}>{label}</label>
+      <input id={`cfg-${key}`} type="number" min="0" step="0.01" className={inputCls}
+        value={prices[key]} onChange={(e) => setPrices((p) => ({ ...p, [key]: e.target.value }))} />
     </div>
   );
 
   return (
-    <section className="tab-content active">
-      <div className="config-cols">
-        <div className="section-card">
-          <h3 className="section-title">💲 Tabela de Preços</h3>
-          <div className="config-grid">
-            {priceField('weaponRental', '🔫 Aluguel de Arma (sem arma)')}
-            {priceField('fieldFeeOwn', '🪖 Taxa do Campo (com arma própria)')}
-            {priceField('magazinePrice', '🎯 Recarga de Carregador')}
-            {priceField('drinkPrice', '🥤 Bebida (por unidade)')}
-            {priceField('teamDrinkPrice', '🥤 Bebida (Membro do Time)')}
-          </div>
-          <button className="btn-primary" onClick={savePrices}>💾 Salvar Preços</button>
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <Card className="flex flex-col gap-4 p-5">
+        <h3 className="font-highlight text-base font-bold text-surface-fg">💲 Tabela de Preços</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {priceField('weaponRental', 'Aluguel de Arma (R$)')}
+          {priceField('fieldFeeOwn', 'Taxa do Campo (R$)')}
+          {priceField('magazinePrice', 'Recarga de Carregador (R$)')}
+          {priceField('drinkPrice', 'Bebida (R$)')}
+          {priceField('teamDrinkPrice', 'Bebida — Time (R$)')}
         </div>
+        <Button className="self-start" onClick={savePrices}><Save size={16} /> Salvar Preços</Button>
+      </Card>
 
-        <div className="section-card">
-          <h3 className="section-title">🔐 Credenciais de Acesso</h3>
-          <div className="config-grid">
-            <div className="config-item">
-              <label htmlFor="cfg-username">Usuário</label>
-              <input id="cfg-username" type="text" className="config-input" autoComplete="off"
-                value={username} onChange={(e) => setUsername(e.target.value)} />
-            </div>
-            <div className="config-item">
-              <label htmlFor="cfg-password">Nova Senha</label>
-              <input id="cfg-password" type="password" className="config-input" autoComplete="new-password"
-                placeholder="Deixe em branco para manter" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
+      <Card className="flex flex-col gap-4 p-5">
+        <h3 className="font-highlight text-base font-bold text-surface-fg">🔐 Credenciais de Acesso</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="cfg-user" className={labelCls}>Usuário</label>
+            <input id="cfg-user" type="text" className={inputCls} autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} />
           </div>
-          <button className="btn-primary" onClick={saveCredentials}>💾 Salvar Credenciais</button>
+          <div>
+            <label htmlFor="cfg-pass" className={labelCls}>Nova Senha</label>
+            <input id="cfg-pass" type="password" className={inputCls} autoComplete="new-password" placeholder="Deixe em branco para manter" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
         </div>
-      </div>
-    </section>
+        <Button className="self-start" onClick={saveCredentials}><Save size={16} /> Salvar Credenciais</Button>
+      </Card>
+    </div>
   );
 }
