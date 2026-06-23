@@ -8,38 +8,38 @@
 /* ── CSS VARIABLES ─────────────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-root:       #080d08;
-  --bg-sidebar:    #0e150e;
-  --bg-card:       rgba(255,255,255,0.03);
-  --bg-card-hover: rgba(255,255,255,0.055);
-  --bg-input:      rgba(255,255,255,0.055);
+  --bg-root:       #0a0d0a;
+  --bg-sidebar:    #0f140f;
+  --bg-card:       rgba(255,255,255,0.035);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --bg-input:      rgba(255,255,255,0.06);
 
   /* Brand */
-  --green-900: #0d1e0d;
-  --green-800: #1a3018;
-  --green-700: #2a5226;
-  --green-600: #3a7034;
-  --green-500: #4a8a40;
-  --green-400: #60a856;
-  --green-300: #7fbd75;
-  --gold:      #c8a832;
-  --gold-dark: #9e7e1e;
+  --green-900: #0d1f0d;
+  --green-800: #163518;
+  --green-700: #266a2a;
+  --green-600: #3f8a34;
+  --green-500: #5fb84a;
+  --green-400: #79cf63;
+  --green-300: #97dd84;
+  --gold:      #e0b13a;
+  --gold-dark: #b8902a;
 
   /* Status */
-  --success: #27ae60;
+  --success: #2ecc71;
   --danger:  #e74c3c;
   --warning: #f39c12;
   --info:    #3498db;
 
   /* Text */
-  --text-100: #edf2ed;
-  --text-200: #aabfaa;
-  --text-300: #6e8a6e;
-  --text-400: #3d553d;
+  --text-100: #eef3ee;
+  --text-200: #acc3ac;
+  --text-300: #7a987a;
+  --text-400: #44603f;
 
   /* Borders */
-  --border:       rgba(74,138,64,0.18);
-  --border-focus: rgba(74,138,64,0.55);
+  --border:       rgba(95,184,74,0.20);
+  --border-focus: rgba(95,184,74,0.55);
 
   /* Layout */
   --sidebar-w: 240px;
@@ -49,7 +49,7 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
   --shadow-md: 0 4px 18px rgba(0,0,0,.45);
   --shadow-lg: 0 8px 40px rgba(0,0,0,.55);
-  --glow-green: 0 0 24px rgba(74,138,64,.25);
+  --glow-green: 0 0 24px rgba(95,184,74,.28);
 
   /* Radius */
   --r-sm: 6px;
@@ -2247,4 +2247,37 @@ input[type="number"]::-webkit-inner-spin-button { opacity:.4; }
 }
 @media (max-width: 420px) {
   .time-grid { grid-template-columns: 1fr; }
+}
+
+/* ================================================================
+   REDESIGN — Tactical Refined: polimento (a11y + dados)
+   ================================================================ */
+
+/* Foco visível e acessível em todos os elementos interativos */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--green-400);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Números/valores com figuras tabulares — evita "dança" de dígitos */
+.data-table td,
+.stat-value,
+.fin-row strong,
+.balance-value,
+.cmd-total,
+.row-prices .price,
+.invoice-table td,
+.day-summary strong,
+.comanda-summary { font-variant-numeric: tabular-nums; }
+
+/* Hover de linha de tabela mais perceptível (desktop) */
+@media (min-width: 769px) {
+  .data-table tbody tr:hover { background: var(--bg-card-hover); }
 }
