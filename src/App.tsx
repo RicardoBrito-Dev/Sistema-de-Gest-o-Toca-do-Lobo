@@ -12,6 +12,7 @@ import { FinanceiroPage } from './features/financeiro/FinanceiroPage';
 import { SociosPage } from './features/socios/SociosPage';
 import { TimePage } from './features/time/TimePage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { HelpPage } from './features/help/HelpPage';
 
 export default function App() {
   const { authed, login, logout } = useAuth();
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/socios" element={<SociosPage />} />
               <Route path="/time" element={<TimePage />} />
               <Route path="/configuracoes" element={<SettingsPage />} />
+              <Route path="/ajuda" element={<HelpPage />} />
             </Routes>
           </main>
         </div>
