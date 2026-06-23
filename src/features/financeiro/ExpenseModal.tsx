@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
 import { Modal } from '../../components/Modal';
 import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
@@ -8,9 +9,12 @@ import type { Expense, ExpenseCategory } from '../../types';
 
 interface Props { open: boolean; editing: Expense | null; onClose: () => void; }
 
+const inputCls = 'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-surface-fg outline-none transition-colors focus:border-secondary';
+const labelCls = 'mb-1 block text-sm font-medium text-surface-fg';
+
 export function ExpenseModal({ open, editing, onClose }: Props) {
   return (
-    <Modal open={open} title={editing ? '✏️ Editar Despesa' : '📉 Lançar Despesa'} onClose={onClose}>
+    <Modal open={open} title={editing ? 'Editar Despesa' : 'Lançar Despesa'} onClose={onClose}>
       <ExpenseForm editing={editing} onClose={onClose} />
     </Modal>
   );
@@ -31,41 +35,38 @@ function ExpenseForm({ editing, onClose }: { editing: Expense | null; onClose: (
     const value = parseFloat(amount) || 0;
     if (!date || !description.trim() || value <= 0) { toast('Preencha todos os campos corretamente!', 'error'); return; }
     const data = { date, category, description: description.trim(), amount: value };
-    if (editing) { updateExpense(editing.id, data); toast('Despesa atualizada! ✅'); }
-    else { addExpense(data); toast('Despesa lançada! ✅'); }
+    if (editing) { updateExpense(editing.id, data); toast('Despesa atualizada!'); }
+    else { addExpense(data); toast('Despesa lançada!'); }
     onClose();
   };
 
   return (
-    <form onSubmit={submit}>
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="e-date">Data *</label>
-          <input id="e-date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+    <form onSubmit={submit} className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="e-date" className={labelCls}>Data *</label>
+          <input id="e-date" type="date" className={inputCls} required value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
-        <div className="form-group">
-          <label htmlFor="e-category">Categoria</label>
-          <select id="e-category" className="config-input" value={category}
-            onChange={(e) => setCategory(e.target.value as ExpenseCategory)}>
+        <div>
+          <label htmlFor="e-category" className={labelCls}>Categoria</label>
+          <select id="e-category" className={inputCls} value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory)}>
             {EXPENSE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
       </div>
-      <div className="form-group">
-        <label htmlFor="e-description">Descrição *</label>
-        <input id="e-description" type="text" required placeholder="Descreva a despesa"
+      <div>
+        <label htmlFor="e-desc" className={labelCls}>Descrição *</label>
+        <input id="e-desc" type="text" className={inputCls} required placeholder="Descreva a despesa"
           value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
-      <div className="form-group">
-        <label htmlFor="e-amount">Valor *</label>
-        <div className="input-money"><span>R$</span>
-          <input id="e-amount" type="number" min="0.01" step="0.01" placeholder="0,00" required
-            value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </div>
+      <div>
+        <label htmlFor="e-amount" className={labelCls}>Valor (R$) *</label>
+        <input id="e-amount" type="number" min="0.01" step="0.01" className={inputCls} required placeholder="0,00"
+          value={amount} onChange={(e) => setAmount(e.target.value)} />
       </div>
-      <div className="modal-actions">
-        <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-        <button type="submit" className="btn-primary">💾 Salvar</button>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button type="submit">Salvar</Button>
       </div>
     </form>
   );
