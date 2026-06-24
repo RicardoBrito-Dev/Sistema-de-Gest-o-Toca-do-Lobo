@@ -115,7 +115,7 @@ export function FinanceiroPage() {
       <Card className="overflow-hidden">
         <h3 className="border-b border-line px-4 py-3 font-highlight font-bold text-surface-fg">Despesas do Período</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm resp-table">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-surface-muted">
                 <th className="px-4 py-3 font-medium">Data</th>
@@ -130,11 +130,11 @@ export function FinanceiroPage() {
                 <tr><td colSpan={5} className="px-4 py-10 text-center text-surface-muted">Nenhuma despesa no período</td></tr>
               ) : data.periodExp.map((e) => (
                 <tr key={e.id} className="transition-colors hover:bg-canvas">
-                  <td className="whitespace-nowrap px-4 py-3 text-surface-fg">{fmtDate(e.date)}</td>
-                  <td className="px-4 py-3"><Badge kind="badge-expense">{e.category}</Badge></td>
-                  <td className="px-4 py-3 text-surface-fg">{e.description}</td>
-                  <td className="px-4 py-3 text-right font-semibold tabular-nums text-negative">{brl(e.amount)}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Data" className="whitespace-nowrap px-4 py-3 text-surface-fg">{fmtDate(e.date)}</td>
+                  <td data-label="Categoria" className="px-4 py-3"><Badge kind="badge-expense">{e.category}</Badge></td>
+                  <td data-label="Descrição" className="px-4 py-3 text-surface-fg">{e.description}</td>
+                  <td data-label="Valor" className="px-4 py-3 text-right font-semibold tabular-nums text-negative">{brl(e.amount)}</td>
+                  <td data-label="Ações" className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button title="Editar" onClick={() => { setEditing(e); setModalOpen(true); }}
                         className="rounded-lg p-2 text-surface-muted transition-colors hover:bg-secondary/10 hover:text-secondary"><Pencil size={15} /></button>

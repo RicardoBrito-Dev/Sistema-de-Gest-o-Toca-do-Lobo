@@ -16,5 +16,15 @@
   --line: 39 50 78;             /* #27324E  bordas no escuro */
 }
 
-/* Preflight do Tailwind está desligado — neutraliza o sublinhado padrão de <a>. */
+body { background: rgb(var(--canvas)); color: rgb(var(--surface-fg)); }
 a { text-decoration: none; color: inherit; }
+
+/* Tabelas .resp-table viram cards no mobile/tablet (rótulos via data-label) */
+@media (max-width: 1023px) {
+  table.resp-table thead { display: none; }
+  table.resp-table tbody { display: block; }
+  table.resp-table tr { display: block; border: 1px solid rgb(var(--line)); border-radius: 12px; padding: 4px 12px; margin: 10px 12px; }
+  table.resp-table td { display: block; border: none !important; padding: 7px 0 !important; }
+  table.resp-table td[data-label] { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: right; }
+  table.resp-table td[data-label]::before { content: attr(data-label); font-weight: 500; color: rgb(var(--surface-muted)); text-align: left; }
+}

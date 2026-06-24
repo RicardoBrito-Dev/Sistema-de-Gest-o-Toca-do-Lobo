@@ -78,7 +78,7 @@ export function SociosPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm resp-table">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-surface-muted">
                 <th className="px-4 py-3 font-medium">Nome</th>
@@ -95,13 +95,13 @@ export function SociosPage() {
                 <tr><td colSpan={7} className="px-4 py-10 text-center text-surface-muted">Nenhum sócio encontrado</td></tr>
               ) : rows.map(({ socio: s, visits, days, status, lastVisit }) => (
                 <tr key={s.id} className="transition-colors hover:bg-canvas">
-                  <td className="px-4 py-3 font-medium text-surface-fg">{s.name}</td>
-                  <td className="px-4 py-3"><Badge kind={BADGE[status].kind}>{BADGE[status].text}</Badge></td>
-                  <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{visits}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-surface-fg">{lastVisit ? fmtDate(lastVisit) : 'Nunca veio'}</td>
-                  <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{days} dias</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-surface-fg">{brl(s.monthlyFee)}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Nome" className="px-4 py-3 font-medium text-surface-fg">{s.name}</td>
+                  <td data-label="Status" className="px-4 py-3"><Badge kind={BADGE[status].kind}>{BADGE[status].text}</Badge></td>
+                  <td data-label="Visitas" className="px-4 py-3 text-center tabular-nums text-surface-fg">{visits}</td>
+                  <td data-label="Última Visita" className="whitespace-nowrap px-4 py-3 text-surface-fg">{lastVisit ? fmtDate(lastVisit) : 'Nunca veio'}</td>
+                  <td data-label="Inatividade" className="px-4 py-3 text-center tabular-nums text-surface-fg">{days} dias</td>
+                  <td data-label="Mensalidade" className="px-4 py-3 text-right tabular-nums text-surface-fg">{brl(s.monthlyFee)}</td>
+                  <td data-label="Ações" className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button title="Editar" onClick={() => { setEditing(s); setModalOpen(true); }}
                         className="rounded-lg p-2 text-surface-muted transition-colors hover:bg-secondary/10 hover:text-secondary"><Pencil size={15} /></button>

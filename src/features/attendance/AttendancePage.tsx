@@ -59,7 +59,7 @@ export function AttendancePage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm resp-table">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-surface-muted">
                 <th className="px-4 py-3 font-medium">Nome</th>
@@ -75,16 +75,16 @@ export function AttendancePage() {
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-surface-muted">Nenhum jogador registrado nesta data</td></tr>
               ) : filtered.map((p) => (
                 <tr key={p.id} className="transition-colors hover:bg-canvas">
-                  <td className="px-4 py-3 font-medium text-surface-fg">{p.name}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Nome" className="px-4 py-3 font-medium text-surface-fg">{p.name}</td>
+                  <td data-label="Armamento" className="px-4 py-3">
                     {p.isTeam
                       ? <Badge kind="badge-active">🪖 Time</Badge>
                       : <Badge kind={p.hasWeapon ? 'badge-own' : 'badge-rental'}>{p.hasWeapon ? 'Arma própria' : 'Arma alugada'}</Badge>}
                   </td>
-                  <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.magazines || 0}</td>
-                  <td className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.drinks || 0}</td>
-                  <td className="px-4 py-3 text-right font-semibold tabular-nums text-secondary">{brl(calcTotal(p, settings))}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Carreg." className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.magazines || 0}</td>
+                  <td data-label="Bebidas" className="px-4 py-3 text-center tabular-nums text-surface-fg">{p.drinks || 0}</td>
+                  <td data-label="Total" className="px-4 py-3 text-right font-semibold tabular-nums text-secondary">{brl(calcTotal(p, settings))}</td>
+                  <td data-label="Ações" className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button title="Editar" onClick={() => { setEditing(p); setModalOpen(true); }}
                         className="rounded-lg p-2 text-surface-muted transition-colors hover:bg-secondary/10 hover:text-secondary">
