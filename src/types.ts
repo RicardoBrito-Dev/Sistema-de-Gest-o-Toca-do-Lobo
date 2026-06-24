@@ -8,6 +8,15 @@ export type ExpenseCategory =
   | 'Manutenção' | 'Combustível' | 'Equipamentos'
   | 'Alimentação' | 'Marketing' | 'Aluguel' | 'Outros';
 
+export type PaymentMethod = 'dinheiro' | 'pix' | 'cartao';
+
+export interface ComandaItem {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+
 export interface AttendanceRecord {
   id: string;
   name: string;
@@ -18,6 +27,8 @@ export interface AttendanceRecord {
   isTeam: boolean;
   paid?: boolean;
   paidAt?: number;       // epoch ms
+  paymentMethod?: PaymentMethod;
+  extras?: ComandaItem[];
 }
 
 export interface Expense {
@@ -56,6 +67,8 @@ export interface Settings {
   teamDrinkPrice: number;
   username: string;
   password: string;
+  pixKey?: string;
+  pixCity?: string;
 }
 
 export interface PersistedData {

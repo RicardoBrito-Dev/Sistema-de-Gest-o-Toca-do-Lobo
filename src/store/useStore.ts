@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData,
+  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData, PaymentMethod,
 } from '../types';
 import { DEFAULTS, LEGACY_KEYS, STORE_KEY, uid } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -47,6 +47,8 @@ function toReactPlayer(p: DbRow): AttendanceRecord {
     isTeam: p.is_team ?? false,
     paid: p.paid ?? false,
     paidAt: p.paid_at ? Number(p.paid_at) : undefined,
+    paymentMethod: p.payment_method ?? undefined,
+    extras: Array.isArray(p.extras) ? p.extras : [],
   };
 }
 
@@ -61,6 +63,8 @@ function toDbPlayer(p: AttendanceRecord) {
     is_team: p.isTeam ?? false,
     paid: p.paid ?? false,
     paid_at: p.paidAt || null,
+    payment_method: p.paymentMethod ?? null,
+    extras: p.extras ?? [],
   };
 }
 
@@ -121,6 +125,8 @@ function toReactSettings(s: DbRow): Settings {
     teamDrinkPrice: Number(s.team_drink_price),
     username: s.username,
     password: s.password,
+    pixKey: s.pix_key ?? undefined,
+    pixCity: s.pix_city ?? undefined,
   };
 }
 
@@ -134,6 +140,8 @@ function toDbSettings(s: Settings) {
     team_drink_price: s.teamDrinkPrice,
     username: s.username,
     password: s.password,
+    pix_key: s.pixKey ?? null,
+    pix_city: s.pixCity ?? null,
   };
 }
 
@@ -145,7 +153,8 @@ interface AppState extends PersistedData {
   addPlayer: (data: Omit<AttendanceRecord, 'id'>) => void;
   updatePlayer: (id: string, patch: Partial<AttendanceRecord>) => void;
   deletePlayer: (id: string) => void;
-  payComanda: (id: string) => void;
+  payComanda: (id: string, method: PaymentMethod) => void;
+  reopenComanda: (id: string) => void;
 
   addExpense: (data: Omit<Expense, 'id'>) => void;
   updateExpense: (id: string, patch: Partial<Expense>) => void;
@@ -265,13 +274,27 @@ export const useStore = create<AppState>()(
           if (error) console.error('Erro ao deletar jogador no Supabase:', error);
         });
       },
-      payComanda: (id) => {
+      payComanda: (id, method) => {
         set((s) => {
-          const updated = s.attendance.map((p) => (p.id === id ? { ...p, paid: true, paidAt: Date.now() } : p));
+          const updated = s.attendance.map((p) =>
+            p.id === id ? { ...p, paid: true, paidAt: Date.now(), paymentMethod: method } : p);
           const target = updated.find((p) => p.id === id);
           if (target) {
             supabase.from('attendance').update(toDbPlayer(target)).eq('id', id).then(({ error }) => {
               if (error) console.error('Erro ao fechar comanda no Supabase:', error);
+            });
+          }
+          return { attendance: updated };
+        });
+      },
+      reopenComanda: (id) => {
+        set((s) => {
+          const updated = s.attendance.map((p) =>
+            p.id === id ? { ...p, paid: false, paidAt: undefined, paymentMethod: undefined } : p);
+          const target = updated.find((p) => p.id === id);
+          if (target) {
+            supabase.from('attendance').update(toDbPlayer(target)).eq('id', id).then(({ error }) => {
+              if (error) console.error('Erro ao reabrir comanda no Supabase:', error);
             });
           }
           return { attendance: updated };

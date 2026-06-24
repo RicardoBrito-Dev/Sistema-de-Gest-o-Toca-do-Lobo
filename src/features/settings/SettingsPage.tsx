@@ -22,6 +22,8 @@ export function SettingsPage() {
   });
   const [username, setUsername] = useState(settings.username);
   const [password, setPassword] = useState('');
+  const [pixKey, setPixKey] = useState(settings.pixKey ?? '');
+  const [pixCity, setPixCity] = useState(settings.pixCity ?? '');
 
   const savePrices = () => {
     const nums = {
@@ -41,6 +43,11 @@ export function SettingsPage() {
     updateSettings({ username: username.trim(), ...(password ? { password } : {}) });
     setPassword('');
     toast('Credenciais atualizadas!');
+  };
+
+  const savePix = () => {
+    updateSettings({ pixKey: pixKey.trim(), pixCity: pixCity.trim() });
+    toast('PIX salvo!');
   };
 
   const priceField = (key: keyof typeof prices, label: string) => (
@@ -78,6 +85,24 @@ export function SettingsPage() {
           </div>
         </div>
         <Button className="self-start" onClick={saveCredentials}><Save size={16} /> Salvar Credenciais</Button>
+      </Card>
+
+      <Card className="flex flex-col gap-4 p-5">
+        <h3 className="font-highlight text-base font-bold text-surface-fg">📱 Configuração do PIX</h3>
+        <p className="text-xs text-surface-muted">Usado para gerar o QR Code de pagamento no fechamento da comanda.</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="cfg-pix-key" className={labelCls}>Chave PIX</label>
+            <input id="cfg-pix-key" type="text" className={inputCls} autoComplete="off"
+              placeholder="E-mail, CPF/CNPJ, telefone ou aleatória" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="cfg-pix-city" className={labelCls}>Cidade (PIX)</label>
+            <input id="cfg-pix-city" type="text" className={inputCls} autoComplete="off"
+              placeholder="Ex.: SAO PAULO" value={pixCity} onChange={(e) => setPixCity(e.target.value)} />
+          </div>
+        </div>
+        <Button className="self-start" onClick={savePix}><Save size={16} /> Salvar PIX</Button>
       </Card>
     </div>
   );
