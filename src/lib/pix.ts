@@ -6,6 +6,43 @@ export interface PixParams {
   txid?: string;
 }
 
+export type PixKeyType = 'telefone' | 'email' | 'cpf' | 'cnpj' | 'aleatoria';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Deduz o tipo a partir de uma chave já salva (para pré-selecionar no formulário).
+export function inferPixKeyType(key: string): PixKeyType {
+  const k = (key || '').trim();
+  if (k.includes('@')) return 'email';
+  if (UUID_RE.test(k)) return 'aleatoria';
+  if (k.startsWith('+')) return 'telefone';
+  const digits = k.replace(/\D/g, '');
+  if (digits.length === 14) return 'cnpj';
+  if (digits.length === 11) return 'cpf';
+  return 'telefone';
+}
+
+// Normaliza a chave para o formato que o PIX exige, conforme o tipo escolhido.
+// Telefone → +55 + DDD + número (o usuário não precisa digitar o +55).
+export function normalizePixKey(key: string, type: PixKeyType): string {
+  const k = (key || '').trim();
+  switch (type) {
+    case 'email':
+      return k.toLowerCase();
+    case 'aleatoria':
+      return k;
+    case 'cpf':
+    case 'cnpj':
+      return k.replace(/\D/g, '');
+    case 'telefone': {
+      let digits = k.replace(/\D/g, '');
+      // Remove o DDI 55 se o usuário já o incluiu (guard de tamanho protege DDD 55).
+      if (digits.startsWith('55') && digits.length > 11) digits = digits.slice(2);
+      return digits ? '+55' + digits : '';
+    }
+  }
+}
+
 function tlv(id: string, value: string): string {
   return id + value.length.toString().padStart(2, '0') + value;
 }

@@ -5,6 +5,22 @@ import { Card } from '../../components/Card';
 import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
 import { brl } from '../../lib/format';
+import { normalizePixKey, inferPixKeyType, type PixKeyType } from '../../lib/pix';
+
+const PIX_TYPE_LABELS: Record<PixKeyType, string> = {
+  telefone: 'Telefone',
+  email: 'E-mail',
+  cpf: 'CPF',
+  cnpj: 'CNPJ',
+  aleatoria: 'Aleatória',
+};
+const PIX_PLACEHOLDERS: Record<PixKeyType, string> = {
+  telefone: '11999998888 (sem o +55)',
+  email: 'clube@email.com',
+  cpf: '000.000.000-00',
+  cnpj: '00.000.000/0000-00',
+  aleatoria: 'chave aleatória (UUID)',
+};
 
 const inputCls = 'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-surface-fg outline-none transition-colors focus:border-secondary';
 const labelCls = 'mb-1 block text-sm font-medium text-surface-fg';
@@ -28,6 +44,7 @@ export function SettingsPage() {
   const [username, setUsername] = useState(settings.username);
   const [password, setPassword] = useState('');
   const [pixKey, setPixKey] = useState(settings.pixKey ?? '');
+  const [pixKeyType, setPixKeyType] = useState<PixKeyType>(() => inferPixKeyType(settings.pixKey ?? ''));
   const [pixCity, setPixCity] = useState(settings.pixCity ?? '');
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
@@ -53,7 +70,9 @@ export function SettingsPage() {
   };
 
   const savePix = () => {
-    updateSettings({ pixKey: pixKey.trim(), pixCity: pixCity.trim() });
+    const normalized = normalizePixKey(pixKey, pixKeyType);
+    updateSettings({ pixKey: normalized, pixCity: pixCity.trim() });
+    setPixKey(normalized); // reflete a chave já formatada no campo
     toast('PIX salvo!');
   };
 
@@ -110,14 +129,28 @@ export function SettingsPage() {
         <p className="text-xs text-surface-muted">Usado para gerar o QR Code de pagamento no fechamento da comanda.</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="cfg-pix-key" className={labelCls}>Chave PIX</label>
-            <input id="cfg-pix-key" type="text" className={inputCls} autoComplete="off"
-              placeholder="E-mail, CPF/CNPJ, telefone ou aleatória" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+            <label htmlFor="cfg-pix-type" className={labelCls}>Tipo de chave</label>
+            <select id="cfg-pix-type" className={inputCls} value={pixKeyType}
+              onChange={(e) => setPixKeyType(e.target.value as PixKeyType)}>
+              {(Object.keys(PIX_TYPE_LABELS) as PixKeyType[]).map((t) => (
+                <option key={t} value={t}>{PIX_TYPE_LABELS[t]}</option>
+              ))}
+            </select>
           </div>
           <div>
+            <label htmlFor="cfg-pix-key" className={labelCls}>Chave PIX</label>
+            <input id="cfg-pix-key" type="text" className={inputCls} autoComplete="off"
+              inputMode={pixKeyType === 'telefone' || pixKeyType === 'cpf' || pixKeyType === 'cnpj' ? 'numeric' : 'text'}
+              placeholder={PIX_PLACEHOLDERS[pixKeyType]} value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+            {pixKeyType === 'telefone' && (
+              <p className="mt-1 text-xs text-surface-muted">Digite só o DDD + número — o <strong>+55</strong> é adicionado automaticamente.</p>
+            )}
+          </div>
+          <div className="sm:col-span-2">
             <label htmlFor="cfg-pix-city" className={labelCls}>Cidade (PIX)</label>
             <input id="cfg-pix-city" type="text" className={inputCls} autoComplete="off"
               placeholder="Ex.: SAO PAULO" value={pixCity} onChange={(e) => setPixCity(e.target.value)} />
+            <p className="mt-1 text-xs text-surface-muted">Cidade do recebedor (exigida pelo padrão PIX). Não afeta para onde o dinheiro vai.</p>
           </div>
         </div>
         <Button className="self-start" onClick={savePix}><Save size={16} /> Salvar PIX</Button>
