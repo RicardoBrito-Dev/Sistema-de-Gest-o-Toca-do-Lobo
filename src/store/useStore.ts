@@ -34,7 +34,9 @@ function runMigration(): void {
 runMigration();
 
 // Mappers for database snake_case columns to/from camelCase interface properties
-function toReactPlayer(p: any): AttendanceRecord {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DbRow = Record<string, any>;
+function toReactPlayer(p: DbRow): AttendanceRecord {
   return {
     id: p.id,
     name: p.name,
@@ -62,7 +64,7 @@ function toDbPlayer(p: AttendanceRecord) {
   };
 }
 
-function toReactSocio(s: any): Socio {
+function toReactSocio(s: DbRow): Socio {
   return {
     id: s.id,
     name: s.name,
@@ -84,7 +86,7 @@ function toDbSocio(s: Socio) {
   };
 }
 
-function toReactMembro(m: any): TimeMember {
+function toReactMembro(m: DbRow): TimeMember {
   return {
     id: m.id,
     name: m.name,
@@ -110,7 +112,7 @@ function toDbMembro(m: TimeMember) {
   };
 }
 
-function toReactSettings(s: any): Settings {
+function toReactSettings(s: DbRow): Settings {
   return {
     weaponRental: Number(s.weapon_rental),
     fieldFeeOwn: Number(s.field_fee_own),
@@ -228,11 +230,11 @@ export const useStore = create<AppState>()(
             dbStatus: 'success',
             dbError: null,
           });
-        } catch (err: any) {
+        } catch (err) {
           console.error('Falha ao conectar com o Supabase:', err);
           set({
             dbStatus: 'error',
-            dbError: err.message || 'Erro ao carregar dados do banco de dados.',
+            dbError: (err instanceof Error ? err.message : null) || 'Erro ao carregar dados do banco de dados.',
           });
         }
       },

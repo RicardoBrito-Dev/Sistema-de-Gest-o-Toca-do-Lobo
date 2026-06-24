@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import { useStore } from '../../store/useStore';
 import { lineItems } from '../../lib/calc';
@@ -22,63 +24,76 @@ export function ComandaModal({ open, label, records, onClose }: Props) {
       *{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:20px;color:#333}
       .invoice-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:20px;margin-bottom:20px}
       .invoice-title h2{font-size:24px}.invoice-info{text-align:right;font-weight:bold}
-      .invoice-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:12px}
-      .invoice-table th,.invoice-table td{border:1px solid #ddd;padding:8px;text-align:left}
-      .invoice-table th{background:#e8e8e8}.invoice-table tbody tr:nth-child(even){background:#f9f9f9}
-      .text-center{text-align:center}.text-right{text-align:right}
-      .invoice-total{margin:20px 0;text-align:right;border-top:2px solid #333;padding-top:15px;font-weight:bold}
-      .invoice-footer{margin-top:30px;text-align:center;font-size:11px;color:#666}
+      table{width:100%;border-collapse:collapse;margin:20px 0;font-size:12px}
+      th,td{border:1px solid #ddd;padding:8px;text-align:left}
+      th{background:#e8e8e8}tbody tr:nth-child(even){background:#f9f9f9}
+      .tc{text-align:center}.tr{text-align:right}
+      .total{margin:20px 0;text-align:right;border-top:2px solid #333;padding-top:15px;font-weight:bold;font-size:16px}
+      .footer{margin-top:30px;text-align:center;font-size:11px;color:#666}
       </style></head><body>${node.innerHTML}<script>window.print();window.onafterprint=()=>window.close();</script>
       </body></html>`);
     w.document.close();
   };
 
   return (
-    <Modal open={open} title={`📋 Comanda – ${label}`} onClose={onClose} size="large">
-      <div id="comanda-print-area" className="comanda-print-area">
-        <div className="comanda-invoice">
-          <div className="invoice-header">
-            <div className="invoice-title"><h2>TOCA DO LOBO</h2><p>Campo de Airsoft</p></div>
-            <div className="invoice-info"><div>📋 <strong>COMANDA</strong></div><div>🎯 {label}</div></div>
+    <Modal open={open} title={`Comanda · ${label}`} onClose={onClose} size="large">
+      <div id="comanda-print-area" className="rounded-xl bg-white p-6 text-slate-800">
+        <div className="invoice-header mb-5 flex items-center justify-between border-b-2 border-slate-800 pb-4">
+          <div className="invoice-title">
+            <h2 className="font-highlight text-2xl font-bold">TOCA DO LOBO</h2>
+            <p className="text-xs text-slate-500">Clube de Airsoft</p>
           </div>
-          <table className="invoice-table">
-            <thead><tr>
-              <th>Jogador</th><th>Data</th><th>Armamento</th><th>Carregadores</th><th>Bebidas</th>
-              <th>Arm.</th><th>Carreg.</th><th>Bebida</th><th>Total</th>
-            </tr></thead>
-            <tbody>
-              {sorted.map((p) => {
-                const li = lineItems(p, settings);
-                const arma = p.isTeam ? '🪖 Membro do Time' : (p.hasWeapon ? '🪖 Arma Própria' : '🔫 Arma Alugada');
-                return (
-                  <tr key={p.id}>
-                    <td>{p.name}</td><td>{fmtDate(p.date)}</td><td>{arma}</td>
-                    <td className="text-center">{p.magazines || 0}</td>
-                    <td className="text-center">{p.drinks || 0}</td>
-                    <td className="text-right">{brl(li.field)}</td>
-                    <td className="text-right">{brl(li.mags)}</td>
-                    <td className="text-right">{brl(li.drinks)}</td>
-                    <td className="text-right"><strong>{brl(li.total)}</strong></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="invoice-total">
-            <div className="invoice-total-row">
-              <span className="invoice-total-label">TOTAL GERAL:</span>
-              <span className="invoice-total-value">{brl(totalGeral)}</span>
-            </div>
-          </div>
-          <div className="invoice-footer">
-            <p>Emitido em: {now.toLocaleDateString('pt-BR')} às {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p>Obrigado pela sua visita! 🐺</p>
+          <div className="invoice-info text-right text-sm font-bold">
+            <div>COMANDA</div>
+            <div>{label}</div>
           </div>
         </div>
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-100 text-left">
+              <th className="border border-slate-200 p-2">Jogador</th>
+              <th className="border border-slate-200 p-2">Data</th>
+              <th className="border border-slate-200 p-2">Armamento</th>
+              <th className="border border-slate-200 p-2 tc text-center">Carreg.</th>
+              <th className="border border-slate-200 p-2 tc text-center">Bebidas</th>
+              <th className="border border-slate-200 p-2 tr text-right">Arm.</th>
+              <th className="border border-slate-200 p-2 tr text-right">Carreg.</th>
+              <th className="border border-slate-200 p-2 tr text-right">Bebida</th>
+              <th className="border border-slate-200 p-2 tr text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => {
+              const li = lineItems(p, settings);
+              const arma = p.isTeam ? 'Membro do Time' : (p.hasWeapon ? 'Arma Própria' : 'Arma Alugada');
+              return (
+                <tr key={p.id} className="even:bg-slate-50">
+                  <td className="border border-slate-200 p-2">{p.name}</td>
+                  <td className="border border-slate-200 p-2">{fmtDate(p.date)}</td>
+                  <td className="border border-slate-200 p-2">{arma}</td>
+                  <td className="border border-slate-200 p-2 tc text-center">{p.magazines || 0}</td>
+                  <td className="border border-slate-200 p-2 tc text-center">{p.drinks || 0}</td>
+                  <td className="border border-slate-200 p-2 tr text-right">{brl(li.field)}</td>
+                  <td className="border border-slate-200 p-2 tr text-right">{brl(li.mags)}</td>
+                  <td className="border border-slate-200 p-2 tr text-right">{brl(li.drinks)}</td>
+                  <td className="border border-slate-200 p-2 tr text-right font-bold">{brl(li.total)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="total mt-5 border-t-2 border-slate-800 pt-3 text-right text-base font-bold">
+          TOTAL GERAL: {brl(totalGeral)}
+        </div>
+        <div className="footer mt-6 text-center text-[11px] text-slate-500">
+          <p>Emitido em {now.toLocaleDateString('pt-BR')} às {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+          <p>Obrigado pela visita! 🐺</p>
+        </div>
       </div>
-      <div className="modal-actions">
-        <button type="button" className="btn-secondary" onClick={onClose}>Fechar</button>
-        <button type="button" className="btn-primary" onClick={print}>🖨️ Imprimir</button>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <Button variant="outline" onClick={onClose}>Fechar</Button>
+        <Button onClick={print}><Printer size={16} /> Imprimir</Button>
       </div>
     </Modal>
   );

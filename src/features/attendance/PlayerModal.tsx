@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
 import { Modal } from '../../components/Modal';
 import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
@@ -8,9 +9,12 @@ import type { AttendanceRecord } from '../../types';
 
 interface Props { open: boolean; editing: AttendanceRecord | null; defaultDate: string; onClose: () => void; }
 
+const inputCls = 'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-surface-fg outline-none transition-colors focus:border-secondary';
+const labelCls = 'mb-1 block text-sm font-medium text-surface-fg';
+
 export function PlayerModal({ open, editing, defaultDate, onClose }: Props) {
   return (
-    <Modal open={open} title={editing ? '✏️ Editar Jogador' : '🎯 Adicionar Jogador'} onClose={onClose}>
+    <Modal open={open} title={editing ? 'Editar Jogador' : 'Adicionar Jogador'} onClose={onClose}>
       <PlayerForm editing={editing} defaultDate={defaultDate} onClose={onClose} />
     </Modal>
   );
@@ -29,78 +33,74 @@ function PlayerForm({ editing, defaultDate, onClose }: { editing: AttendanceReco
   const [drinks, setDrinks] = useState(() => editing?.drinks ?? 0);
   const [isTeam, setIsTeam] = useState(() => editing?.isTeam ?? false);
 
-  const preview = lineItems(
-    { id: '', name, date, hasWeapon, magazines, drinks, isTeam }, settings,
-  );
+  const preview = lineItems({ id: '', name, date, hasWeapon, magazines, drinks, isTeam }, settings);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !date) return;
     const data = { name: name.trim(), date, hasWeapon, magazines, drinks, isTeam };
-    if (editing) { updatePlayer(editing.id, data); toast('Jogador atualizado! ✅'); }
-    else { addPlayer(data); toast('Jogador adicionado! ✅'); }
+    if (editing) { updatePlayer(editing.id, data); toast('Jogador atualizado!'); }
+    else { addPlayer(data); toast('Jogador adicionado!'); }
     onClose();
   };
 
   return (
-    <form onSubmit={submit}>
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="p-name">Nome do Jogador *</label>
-          <input id="p-name" type="text" required value={name}
-            onChange={(e) => setName(e.target.value)} placeholder="Nome completo" autoFocus />
+    <form onSubmit={submit} className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="p-name" className={labelCls}>Nome do Jogador *</label>
+          <input id="p-name" className={inputCls} required value={name} autoFocus
+            onChange={(e) => setName(e.target.value)} placeholder="Nome completo" />
         </div>
-        <div className="form-group">
-          <label htmlFor="p-date">Data *</label>
-          <input id="p-date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+        <div>
+          <label htmlFor="p-date" className={labelCls}>Data *</label>
+          <input id="p-date" type="date" className={inputCls} required value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
 
-      <div className="form-group">
-        <label>Armamento</label>
-        <div className="weapon-toggle">
-          <button type="button" className={`weapon-btn${!hasWeapon ? ' active' : ''}`} onClick={() => setHasWeapon(false)}>
-            🔫 Aluga Arma <span className="weapon-price">{brl(settings.weaponRental)}</span>
+      <div>
+        <span className={labelCls}>Armamento</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setHasWeapon(false)}
+            className={`flex flex-col items-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${!hasWeapon ? 'border-secondary bg-secondary/10 text-secondary' : 'border-line text-surface-muted'}`}>
+            Aluga Arma <span className="text-xs">{brl(settings.weaponRental)}</span>
           </button>
-          <button type="button" className={`weapon-btn${hasWeapon ? ' active' : ''}`} onClick={() => setHasWeapon(true)}>
-            🪖 Arma Própria <span className="weapon-price">{brl(settings.fieldFeeOwn)}</span>
+          <button type="button" onClick={() => setHasWeapon(true)}
+            className={`flex flex-col items-center rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${hasWeapon ? 'border-secondary bg-secondary/10 text-secondary' : 'border-line text-surface-muted'}`}>
+            Arma Própria <span className="text-xs">{brl(settings.fieldFeeOwn)}</span>
           </button>
         </div>
       </div>
 
-      <div className="form-group" style={{ background: 'rgba(74,138,64,0.1)', padding: 10, borderRadius: 'var(--r-sm)', border: '1px solid rgba(74,138,64,0.3)', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 15 }}>
-        <input id="p-is-team" type="checkbox" checked={isTeam} onChange={(e) => setIsTeam(e.target.checked)}
-          style={{ width: 20, height: 20, accentColor: 'var(--green-500)', cursor: 'pointer' }} />
-        <label htmlFor="p-is-team" style={{ margin: 0, fontWeight: 'bold', color: 'var(--green-300)', cursor: 'pointer' }}>
-          🪖 Jogador é membro do Time (Isento de taxas, desconto em bebidas)
-        </label>
-      </div>
+      <label className="flex items-center gap-3 rounded-xl border border-secondary/30 bg-secondary/5 px-3 py-2.5">
+        <input type="checkbox" checked={isTeam} onChange={(e) => setIsTeam(e.target.checked)}
+          className="h-5 w-5 accent-secondary" />
+        <span className="text-sm font-medium text-surface-fg">Jogador é membro do Time (isento de taxas, desconto em bebidas)</span>
+      </label>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label htmlFor="p-magazines">🎯 Carregadores Usados</label>
-          <input id="p-magazines" type="number" min={0} value={magazines}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="p-mags" className={labelCls}>Carregadores</label>
+          <input id="p-mags" type="number" min={0} className={inputCls} value={magazines}
             onChange={(e) => setMagazines(Math.max(0, parseInt(e.target.value) || 0))} />
         </div>
-        <div className="form-group">
-          <label htmlFor="p-drinks">🥤 Bebidas Consumidas</label>
-          <input id="p-drinks" type="number" min={0} value={drinks}
+        <div>
+          <label htmlFor="p-drinks" className={labelCls}>Bebidas</label>
+          <input id="p-drinks" type="number" min={0} className={inputCls} value={drinks}
             onChange={(e) => setDrinks(Math.max(0, parseInt(e.target.value) || 0))} />
         </div>
       </div>
 
-      <div className="total-preview">
-        <div className="total-breakdown">
-          <div className="breakdown-row"><span>Armamento</span><span>{brl(preview.field)}</span></div>
-          <div className="breakdown-row"><span>Carregadores</span><span>{brl(preview.mags)}</span></div>
-          <div className="breakdown-row"><span>Bebidas</span><span>{brl(preview.drinks)}</span></div>
-        </div>
-        <div className="total-final"><span>TOTAL</span><strong>{brl(preview.total)}</strong></div>
+      <div className="rounded-xl border border-line bg-canvas p-4 text-sm">
+        <div className="flex justify-between py-0.5 text-surface-muted"><span>Armamento</span><span className="tabular-nums">{brl(preview.field)}</span></div>
+        <div className="flex justify-between py-0.5 text-surface-muted"><span>Carregadores</span><span className="tabular-nums">{brl(preview.mags)}</span></div>
+        <div className="flex justify-between py-0.5 text-surface-muted"><span>Bebidas</span><span className="tabular-nums">{brl(preview.drinks)}</span></div>
+        <div className="mt-2 flex justify-between border-t border-line pt-2 font-bold text-surface-fg"><span>TOTAL</span><span className="tabular-nums text-secondary">{brl(preview.total)}</span></div>
       </div>
 
-      <div className="modal-actions">
-        <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-        <button type="submit" className="btn-primary">💾 Salvar</button>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button type="submit">Salvar</Button>
       </div>
     </form>
   );

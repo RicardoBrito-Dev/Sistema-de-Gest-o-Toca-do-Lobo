@@ -6,6 +6,7 @@ import { ToastProvider } from './components/ToastProvider';
 import { Sidebar } from './components/Sidebar';
 import { MobileNav } from './components/MobileNav';
 import { Header } from './components/Header';
+import { Button } from '@/components/ui/button';
 import { LoginPage } from './features/auth/LoginPage';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { AttendancePage } from './features/attendance/AttendancePage';
@@ -18,54 +19,27 @@ import { HelpPage } from './features/help/HelpPage';
 
 function DbLoadingPage({ error, onRetry, onOffline }: { error: string | null; onRetry: () => void; onOffline: () => void }) {
   return (
-    <div id="login-page" className="page">
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .db-spinner {
-          width: 40px;
-          height: 40px;
-          border: 4px solid rgba(255, 255, 255, 0.1);
-          border-left-color: var(--primary, #c8963e);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 2rem auto;
-        }
-      `}</style>
-      <div className="login-bg">
-        <div className="login-container">
-          <div className="login-logo">
-            <img src="/logo.jpg" alt="Toca do Lobo Logo" className="logo-img-login" />
-            <h1>TOCA DO LOBO</h1>
-            <p>Gerenciamento Tático de Airsoft</p>
+    <div className="flex min-h-dvh items-center justify-center bg-canvas px-4 font-body">
+      <div className="w-full max-w-sm rounded-3xl border border-line bg-surface p-8 text-center shadow-xl">
+        <img src="/logo.jpg" alt="Toca do Lobo" className="mx-auto mb-4 h-20 w-20 rounded-2xl object-cover shadow-md" />
+        <h1 className="font-highlight text-2xl font-bold tracking-tight text-surface-fg">TOCA DO LOBO</h1>
+        <p className="mt-1 text-sm text-surface-muted">Clube de Airsoft</p>
+
+        {error ? (
+          <div className="mt-6">
+            <p className="mb-4 text-sm font-medium text-negative">⚠️ Erro de conexão: {error}</p>
+            <Button className="w-full" onClick={onRetry}>Tentar novamente</Button>
+            <button onClick={onOffline}
+              className="mt-2 w-full rounded-3xl border border-line px-5 py-3 text-sm font-medium text-surface-muted transition-colors hover:bg-canvas">
+              Modo offline (usar cache local)
+            </button>
           </div>
-          {error ? (
-            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-              <p style={{ color: '#ff6b6b', marginBottom: '1rem' }}>⚠️ Erro de conexão: {error}</p>
-              <button onClick={onRetry} className="btn-login" style={{ marginBottom: '0.5rem' }}>
-                TENTAR NOVAMENTE
-              </button>
-              <button 
-                onClick={onOffline} 
-                className="btn-login" 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid rgba(255,255,255,0.2)', 
-                  color: '#ccc',
-                  marginTop: '0.5rem'
-                }}
-              >
-                MODO OFFLINE (USAR CACHE LOCAL)
-              </button>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <div className="db-spinner" />
-              <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Conectando ao banco de dados Supabase...</p>
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-line border-l-secondary" />
+            <p className="text-sm text-surface-muted">Conectando ao banco de dados…</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -94,11 +68,11 @@ export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
-        <div id="app-page" className="page">
+        <div className="min-h-dvh bg-canvas font-body text-surface-fg">
           <Sidebar onLogout={logout} />
-          <MobileNav />
-          <main className="main-content">
+          <div className="flex min-h-dvh flex-col md:pl-60">
             <Header onLogout={logout} />
+            <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/presenca" element={<AttendancePage />} />
@@ -109,7 +83,9 @@ export default function App() {
               <Route path="/configuracoes" element={<SettingsPage />} />
               <Route path="/ajuda" element={<HelpPage />} />
             </Routes>
-          </main>
+            </main>
+          </div>
+          <MobileNav />
         </div>
       </BrowserRouter>
     </ToastProvider>
