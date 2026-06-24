@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './style.css';
 import './synvia-global.css';
 import './theme.css';
 import App from './App';

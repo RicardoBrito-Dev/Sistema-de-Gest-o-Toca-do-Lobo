@@ -6,8 +6,6 @@ import { fonts } from './src/tokens/base/fonts';
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx,html}'],
   darkMode: 'class',
-  // Preflight desligado para coexistir com o style.css legado durante a migração incremental.
-  corePlugins: { preflight: false },
   theme: {
     extend: {
       colors: {
