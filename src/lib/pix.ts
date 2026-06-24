@@ -14,7 +14,7 @@ function tlv(id: string, value: string): string {
 function clean(s: string, max: number): string {
   return s
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[̀-ͯ]/g, '') // remove marcas diacríticas combinantes
     .replace(/[^\x20-\x7E]/g, '')
     .toUpperCase()
     .slice(0, max);
