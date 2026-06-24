@@ -11,6 +11,7 @@ import { AddItemModal } from './AddItemModal';
 import { ComandaQrModal } from './ComandaQrModal';
 import { lineItems } from '../../lib/calc';
 import { brl, fmtDate, todayStr } from '../../lib/format';
+import { FREE_RENTAL_MAGS } from '../../lib/constants';
 import type { AttendanceRecord, Settings } from '../../types';
 
 function Stepper({ value, disabled, onDelta }: { value: number; disabled: boolean; onDelta: (d: number) => void }) {
@@ -39,6 +40,7 @@ function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemov
   onQr: (id: string) => void;
 }) {
   const li = lineItems(p, settings);
+  const isRental = !p.isTeam && !p.hasWeapon;
   const arma = p.isTeam ? 'Membro do Time' : (p.hasWeapon ? 'Arma própria' : 'Arma alugada');
   const paidAt = p.paidAt ? new Date(p.paidAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   const extras = p.extras ?? [];
@@ -52,7 +54,9 @@ function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemov
             {p.paid && <span className="rounded bg-positive-50 px-1.5 py-0.5 text-[10px] font-semibold text-positive">PAGO {paidAt}</span>}
             {p.paid && p.paymentMethod && <span className="rounded bg-canvas px-1.5 py-0.5 text-[10px] font-semibold uppercase text-surface-muted">{p.paymentMethod}</span>}
           </div>
-          <div className="text-xs text-surface-muted">{arma}</div>
+          <div className="text-xs text-surface-muted">
+            {arma}{isRental ? ` · ${FREE_RENTAL_MAGS} carregadores inclusos` : ''}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">

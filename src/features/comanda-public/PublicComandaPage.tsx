@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { getChargeableMags, lineItems } from '../../lib/calc';
 import { buildPixPayload } from '../../lib/pix';
 import { brl, fmtDate } from '../../lib/format';
-import { DEFAULTS } from '../../lib/constants';
+import { DEFAULTS, FREE_RENTAL_MAGS } from '../../lib/constants';
 import type { AttendanceRecord, Settings } from '../../types';
 
 interface ComandaData { player: AttendanceRecord; settings: Settings; }
@@ -72,6 +72,7 @@ export function PublicComandaPage() {
   }
 
   const li = lineItems(player, settings);
+  const isRental = !player.isTeam && !player.hasWeapon;
   const armamento = player.isTeam ? 'Membro do Time' : (player.hasWeapon ? 'Arma própria' : 'Arma alugada');
   const chargeableMags = getChargeableMags(player.hasWeapon, player.magazines);
   const paidTime = player.paidAt
@@ -82,7 +83,7 @@ export function PublicComandaPage() {
   const rows: { label: string; value: number }[] = [
     { label: player.isTeam ? 'Membro do Time' : (player.hasWeapon ? 'Taxa do campo' : 'Campo + aluguel de arma'), value: li.field },
   ];
-  if (li.mags > 0) rows.push({ label: `Carregadores (${chargeableMags}x)`, value: li.mags });
+  if (li.mags > 0) rows.push({ label: `Carregadores ${isRental ? 'extras ' : ''}(${chargeableMags}x)`, value: li.mags });
   if (li.drinks > 0) rows.push({ label: `Bebidas (${player.drinks}x)`, value: li.drinks });
   (player.extras ?? []).forEach((e) => rows.push({ label: e.qty > 1 ? `${e.name} x${e.qty}` : e.name, value: e.price * e.qty }));
 
@@ -114,7 +115,10 @@ export function PublicComandaPage() {
           </div>
 
           <p className="font-highlight text-lg font-bold">{player.name}</p>
-          <p className="mb-4 text-xs text-surface-muted">{armamento}</p>
+          <p className="mb-4 text-xs text-surface-muted">
+            {armamento}
+            {isRental && <> · <span className="font-medium text-secondary">inclui {FREE_RENTAL_MAGS} carregadores</span></>}
+          </p>
 
           <div className="flex flex-col">
             {rows.map((r, i) => (

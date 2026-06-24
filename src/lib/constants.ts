@@ -2,6 +2,9 @@ import type { Settings, Patente, ExpenseCategory } from '../types';
 
 export const STORE_KEY = 'tdl_store';
 
+/** Carregadores de cortesia para quem aluga arma (os 2 primeiros não são cobrados). */
+export const FREE_RENTAL_MAGS = 2;
+
 export const LEGACY_KEYS = {
   attendance: 'tdl_attendance',
   expenses: 'tdl_expenses',
