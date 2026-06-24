@@ -132,11 +132,11 @@ export function PublicComandaPage() {
 
           {player.paid ? (
             <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-positive-50 px-3 py-3 text-sm font-semibold text-positive">
-              <Check size={16} /> PAGO{paidTime ? ` · ${paidTime}` : ''}
+              <Check size={16} /> Paga{paidTime ? ` · ${paidTime}` : ''}
             </div>
           ) : (
             <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-alert-50 px-3 py-3 text-sm font-semibold text-alert-900">
-              <Clock size={16} /> Aguardando pagamento
+              <Clock size={16} /> Em aberto
             </div>
           )}
         </div>
