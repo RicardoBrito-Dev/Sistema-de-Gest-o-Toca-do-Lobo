@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '../../components/Modal';
 import { useStore } from '../../store/useStore';
@@ -6,7 +6,10 @@ import { useToast } from '../../components/ToastProvider';
 import { brl } from '../../lib/format';
 
 export function AddItemModal({ open, playerId, onClose }: { open: boolean; playerId: string | null; onClose: () => void }) {
-  const products = useStore((s) => s.products.filter((p) => p.active));
+  // Selecionar o array cru (referência estável) e derivar o filtro com useMemo.
+  // Filtrar dentro do selector retorna um array novo a cada render → loop infinito no Zustand v5.
+  const allProducts = useStore((s) => s.products);
+  const products = useMemo(() => allProducts.filter((p) => p.active), [allProducts]);
   const addExtra = useStore((s) => s.addExtra);
   const { toast } = useToast();
   const [sel, setSel] = useState<string>('');

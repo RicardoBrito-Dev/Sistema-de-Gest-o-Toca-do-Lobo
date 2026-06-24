@@ -210,9 +210,13 @@ export const useStore = create<AppState>()(
             supabase.from('products').select('*'),
           ]);
 
-          const err = settingsRes.error || timeRes.error || sociosRes.error || expensesRes.error || attendanceRes.error || productsRes.error;
+          // products é opcional: se a tabela ainda não existe (migração não aplicada), não derruba o app
+          const err = settingsRes.error || timeRes.error || sociosRes.error || expensesRes.error || attendanceRes.error;
           if (err) {
             throw new Error(err.message || 'Erro desconhecido ao carregar dados do Supabase.');
+          }
+          if (productsRes.error) {
+            console.warn('Tabela "products" indisponível (rode a migração SQL do Comandas v2):', productsRes.error.message);
           }
 
           let finalSettings = settingsRes.data?.[0] ? toReactSettings(settingsRes.data[0]) : null;
