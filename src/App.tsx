@@ -17,6 +17,7 @@ import { SociosPage } from './features/socios/SociosPage';
 import { TimePage } from './features/time/TimePage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { HelpPage } from './features/help/HelpPage';
+import { PublicComandaPage } from './features/comanda-public/PublicComandaPage';
 
 function DbLoadingPage({ error, onRetry, onOffline }: { error: string | null; onRetry: () => void; onOffline: () => void }) {
   return (
@@ -46,7 +47,7 @@ function DbLoadingPage({ error, onRetry, onOffline }: { error: string | null; on
   );
 }
 
-export default function App() {
+function AuthedApp() {
   const dbStatus = useStore((s) => s.dbStatus);
   const dbError = useStore((s) => s.dbError);
   const initDb = useStore((s) => s.initDb);
@@ -69,27 +70,36 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <BrowserRouter>
-        <div className="min-h-dvh bg-canvas font-body text-surface-fg">
-          <Sidebar onLogout={logout} expanded={expanded} />
-          <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${expanded ? 'md:pl-60' : 'md:pl-16'}`}>
-            <Header onLogout={logout} onToggleSidebar={toggleSidebar} />
-            <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/presenca" element={<AttendancePage />} />
-              <Route path="/financeiro" element={<FinanceiroPage />} />
-              <Route path="/comandas" element={<ComandasPage />} />
-              <Route path="/socios" element={<SociosPage />} />
-              <Route path="/time" element={<TimePage />} />
-              <Route path="/configuracoes" element={<SettingsPage />} />
-              <Route path="/ajuda" element={<HelpPage />} />
-            </Routes>
-            </main>
-          </div>
-          <MobileNav />
+      <div className="min-h-dvh bg-canvas font-body text-surface-fg">
+        <Sidebar onLogout={logout} expanded={expanded} />
+        <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${expanded ? 'md:pl-60' : 'md:pl-16'}`}>
+          <Header onLogout={logout} onToggleSidebar={toggleSidebar} />
+          <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/presenca" element={<AttendancePage />} />
+            <Route path="/financeiro" element={<FinanceiroPage />} />
+            <Route path="/comandas" element={<ComandasPage />} />
+            <Route path="/socios" element={<SociosPage />} />
+            <Route path="/time" element={<TimePage />} />
+            <Route path="/configuracoes" element={<SettingsPage />} />
+            <Route path="/ajuda" element={<HelpPage />} />
+          </Routes>
+          </main>
         </div>
-      </BrowserRouter>
+        <MobileNav />
+      </div>
     </ToastProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/comanda/:id" element={<PublicComandaPage />} />
+        <Route path="/*" element={<AuthedApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

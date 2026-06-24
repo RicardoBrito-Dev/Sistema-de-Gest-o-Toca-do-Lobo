@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Minus, Plus, Printer, Check, Search, RotateCcw, X } from 'lucide-react';
+import { Minus, Plus, Printer, Check, Search, RotateCcw, X, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -8,6 +8,7 @@ import { useToast } from '../../components/ToastProvider';
 import { ComandaModal } from './ComandaModal';
 import { PaymentModal } from './PaymentModal';
 import { AddItemModal } from './AddItemModal';
+import { ComandaQrModal } from './ComandaQrModal';
 import { lineItems } from '../../lib/calc';
 import { brl, fmtDate, todayStr } from '../../lib/format';
 import type { AttendanceRecord, Settings } from '../../types';
@@ -28,13 +29,14 @@ function Stepper({ value, disabled, onDelta }: { value: number; disabled: boolea
   );
 }
 
-function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemoveExtra }: {
+function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemoveExtra, onQr }: {
   p: AttendanceRecord; settings: Settings;
   onPay: (id: string) => void;
   onReopen: (id: string) => void;
   onAdjust: (id: string, field: 'magazines' | 'drinks', value: number) => void;
   onAddItem: (id: string) => void;
   onRemoveExtra: (playerId: string, itemId: string) => void;
+  onQr: (id: string) => void;
 }) {
   const li = lineItems(p, settings);
   const arma = p.isTeam ? 'Membro do Time' : (p.hasWeapon ? 'Arma própria' : 'Arma alugada');
@@ -74,10 +76,12 @@ function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemov
         {p.paid ? (
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 rounded-lg bg-positive-50 px-3 py-2 text-sm font-medium text-positive"><Check size={15} /> Pago</span>
+            <Button size="sm" variant="outline" aria-label="QR da comanda" onClick={() => onQr(p.id)}><QrCode size={15} /> QR</Button>
             <Button size="sm" variant="outline" onClick={() => onReopen(p.id)}><RotateCcw size={15} /> Reabrir</Button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" aria-label="QR da comanda" onClick={() => onQr(p.id)}><QrCode size={15} /> QR</Button>
             <Button size="sm" variant="outline" onClick={() => onAddItem(p.id)}><Plus size={15} /> Item</Button>
             <Button size="sm" onClick={() => onPay(p.id)}><Check size={15} /> Fechar</Button>
           </div>
@@ -119,6 +123,7 @@ export function ComandasPage() {
   const [payTarget, setPayTarget] = useState<AttendanceRecord | null>(null);
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [addItemId, setAddItemId] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<AttendanceRecord | null>(null);
 
   const records = useMemo(() => {
     let recs = attendance.filter((p) => p.date === date).sort((a, b) => a.name.localeCompare(b.name));
@@ -189,7 +194,7 @@ export function ComandasPage() {
             <div className="divide-y divide-line">
               {visible.map((p) => (
                 <ComandaRow key={p.id} p={p} settings={settings} onPay={onPay} onReopen={(id) => setReopenId(id)} onAdjust={onAdjust}
-                  onAddItem={(id) => setAddItemId(id)} onRemoveExtra={removeExtra} />
+                  onAddItem={(id) => setAddItemId(id)} onRemoveExtra={removeExtra} onQr={(id) => setQrTarget(records.find((x) => x.id === id) ?? null)} />
               ))}
             </div>
           )}
@@ -203,6 +208,9 @@ export function ComandasPage() {
         onClose={() => setPayTarget(null)} />
 
       <AddItemModal open={addItemId !== null} playerId={addItemId} onClose={() => setAddItemId(null)} />
+
+      <ComandaQrModal open={qrTarget !== null} playerId={qrTarget?.id ?? null}
+        playerName={qrTarget?.name ?? ''} onClose={() => setQrTarget(null)} />
 
       <ConfirmDialog open={reopenId !== null} message="Reabrir esta comanda paga?"
         onConfirm={() => { if (reopenId) { reopenComanda(reopenId); toast('Comanda reaberta!'); } setReopenId(null); }}
