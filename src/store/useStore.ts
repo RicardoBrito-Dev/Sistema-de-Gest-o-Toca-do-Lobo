@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData,
+  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData, PaymentMethod, Product, ComandaItem,
 } from '../types';
 import { DEFAULTS, LEGACY_KEYS, STORE_KEY, uid } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -21,6 +21,7 @@ export function buildMigratedState(): PersistedData | null {
     expenses: parse<Expense[]>(localStorage.getItem(LEGACY_KEYS.expenses), []),
     socios: parse<Socio[]>(localStorage.getItem(LEGACY_KEYS.socios), []),
     time: parse<TimeMember[]>(localStorage.getItem(LEGACY_KEYS.time), []),
+    products: [],
     settings: { ...DEFAULTS, ...parse<Partial<Settings>>(localStorage.getItem(LEGACY_KEYS.settings), {}) },
   };
 }
@@ -47,6 +48,8 @@ function toReactPlayer(p: DbRow): AttendanceRecord {
     isTeam: p.is_team ?? false,
     paid: p.paid ?? false,
     paidAt: p.paid_at ? Number(p.paid_at) : undefined,
+    paymentMethod: p.payment_method ?? undefined,
+    extras: Array.isArray(p.extras) ? p.extras : [],
   };
 }
 
@@ -61,6 +64,8 @@ function toDbPlayer(p: AttendanceRecord) {
     is_team: p.isTeam ?? false,
     paid: p.paid ?? false,
     paid_at: p.paidAt || null,
+    payment_method: p.paymentMethod ?? null,
+    extras: p.extras ?? [],
   };
 }
 
@@ -121,6 +126,8 @@ function toReactSettings(s: DbRow): Settings {
     teamDrinkPrice: Number(s.team_drink_price),
     username: s.username,
     password: s.password,
+    pixKey: s.pix_key ?? undefined,
+    pixCity: s.pix_city ?? undefined,
   };
 }
 
@@ -134,7 +141,17 @@ function toDbSettings(s: Settings) {
     team_drink_price: s.teamDrinkPrice,
     username: s.username,
     password: s.password,
+    pix_key: s.pixKey ?? null,
+    pix_city: s.pixCity ?? null,
   };
+}
+
+function toReactProduct(p: DbRow): Product {
+  return { id: p.id, name: p.name, price: Number(p.price), active: p.active ?? true };
+}
+
+function toDbProduct(p: Product) {
+  return { id: p.id, name: p.name, price: p.price, active: p.active };
 }
 
 interface AppState extends PersistedData {
@@ -145,7 +162,14 @@ interface AppState extends PersistedData {
   addPlayer: (data: Omit<AttendanceRecord, 'id'>) => void;
   updatePlayer: (id: string, patch: Partial<AttendanceRecord>) => void;
   deletePlayer: (id: string) => void;
-  payComanda: (id: string) => void;
+  payComanda: (id: string, method: PaymentMethod) => void;
+  reopenComanda: (id: string) => void;
+
+  addProduct: (data: Omit<Product, 'id'>) => void;
+  updateProduct: (id: string, patch: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
+  addExtra: (playerId: string, item: Omit<ComandaItem, 'id'>) => void;
+  removeExtra: (playerId: string, itemId: string) => void;
 
   addExpense: (data: Omit<Expense, 'id'>) => void;
   updateExpense: (id: string, patch: Partial<Expense>) => void;
@@ -169,6 +193,7 @@ export const useStore = create<AppState>()(
       expenses: [],
       socios: [],
       time: [],
+      products: [],
       settings: { ...DEFAULTS },
       dbStatus: 'idle',
       dbError: null,
@@ -176,17 +201,22 @@ export const useStore = create<AppState>()(
       initDb: async () => {
         set({ dbStatus: 'loading', dbError: null });
         try {
-          const [settingsRes, timeRes, sociosRes, expensesRes, attendanceRes] = await Promise.all([
+          const [settingsRes, timeRes, sociosRes, expensesRes, attendanceRes, productsRes] = await Promise.all([
             supabase.from('settings').select('*'),
             supabase.from('time_members').select('*'),
             supabase.from('socios').select('*'),
             supabase.from('expenses').select('*'),
             supabase.from('attendance').select('*'),
+            supabase.from('products').select('*'),
           ]);
 
+          // products é opcional: se a tabela ainda não existe (migração não aplicada), não derruba o app
           const err = settingsRes.error || timeRes.error || sociosRes.error || expensesRes.error || attendanceRes.error;
           if (err) {
             throw new Error(err.message || 'Erro desconhecido ao carregar dados do Supabase.');
+          }
+          if (productsRes.error) {
+            console.warn('Tabela "products" indisponível (rode a migração SQL do Comandas v2):', productsRes.error.message);
           }
 
           let finalSettings = settingsRes.data?.[0] ? toReactSettings(settingsRes.data[0]) : null;
@@ -194,6 +224,7 @@ export const useStore = create<AppState>()(
           let finalSocios = sociosRes.data ? sociosRes.data.map(toReactSocio) : [];
           let finalExpenses = expensesRes.data ? expensesRes.data : [];
           let finalAttendance = attendanceRes.data ? attendanceRes.data.map(toReactPlayer) : [];
+          let finalProducts = productsRes.data ? productsRes.data.map(toReactProduct) : [];
 
           // Se as tabelas estiverem sem dados (primeiro acesso no Supabase), alimentamos com os dados locais atuais do localStorage
           if (!finalSettings) {
@@ -219,6 +250,10 @@ export const useStore = create<AppState>()(
               await supabase.from('attendance').upsert(state.attendance.map(toDbPlayer));
               finalAttendance = state.attendance;
             }
+            if (state.products.length > 0) {
+              await supabase.from('products').upsert(state.products.map(toDbProduct));
+              finalProducts = state.products;
+            }
           }
 
           set({
@@ -227,6 +262,7 @@ export const useStore = create<AppState>()(
             socios: finalSocios,
             expenses: finalExpenses,
             attendance: finalAttendance,
+            products: finalProducts,
             dbStatus: 'success',
             dbError: null,
           });
@@ -265,13 +301,80 @@ export const useStore = create<AppState>()(
           if (error) console.error('Erro ao deletar jogador no Supabase:', error);
         });
       },
-      payComanda: (id) => {
+      payComanda: (id, method) => {
         set((s) => {
-          const updated = s.attendance.map((p) => (p.id === id ? { ...p, paid: true, paidAt: Date.now() } : p));
+          const updated = s.attendance.map((p) =>
+            p.id === id ? { ...p, paid: true, paidAt: Date.now(), paymentMethod: method } : p);
           const target = updated.find((p) => p.id === id);
           if (target) {
             supabase.from('attendance').update(toDbPlayer(target)).eq('id', id).then(({ error }) => {
               if (error) console.error('Erro ao fechar comanda no Supabase:', error);
+            });
+          }
+          return { attendance: updated };
+        });
+      },
+      reopenComanda: (id) => {
+        set((s) => {
+          const updated = s.attendance.map((p) =>
+            p.id === id ? { ...p, paid: false, paidAt: undefined, paymentMethod: undefined } : p);
+          const target = updated.find((p) => p.id === id);
+          if (target) {
+            supabase.from('attendance').update(toDbPlayer(target)).eq('id', id).then(({ error }) => {
+              if (error) console.error('Erro ao reabrir comanda no Supabase:', error);
+            });
+          }
+          return { attendance: updated };
+        });
+      },
+
+      addProduct: (data) => {
+        const newProduct: Product = { ...data, id: uid() };
+        set((s) => ({ products: [...s.products, newProduct] }));
+        supabase.from('products').insert(toDbProduct(newProduct)).then(({ error }) => {
+          if (error) console.error('Erro ao adicionar produto no Supabase:', error);
+        });
+      },
+      updateProduct: (id, patch) => {
+        set((s) => {
+          const updated = s.products.map((p) => (p.id === id ? { ...p, ...patch } : p));
+          const target = updated.find((p) => p.id === id);
+          if (target) {
+            supabase.from('products').update(toDbProduct(target)).eq('id', id).then(({ error }) => {
+              if (error) console.error('Erro ao atualizar produto no Supabase:', error);
+            });
+          }
+          return { products: updated };
+        });
+      },
+      deleteProduct: (id) => {
+        set((s) => ({ products: s.products.filter((p) => p.id !== id) }));
+        supabase.from('products').delete().eq('id', id).then(({ error }) => {
+          if (error) console.error('Erro ao deletar produto no Supabase:', error);
+        });
+      },
+      addExtra: (playerId, item) => {
+        const newItem: ComandaItem = { ...item, id: uid() };
+        set((s) => {
+          const updated = s.attendance.map((p) =>
+            p.id === playerId ? { ...p, extras: [...(p.extras ?? []), newItem] } : p);
+          const target = updated.find((p) => p.id === playerId);
+          if (target) {
+            supabase.from('attendance').update(toDbPlayer(target)).eq('id', playerId).then(({ error }) => {
+              if (error) console.error('Erro ao adicionar item na comanda no Supabase:', error);
+            });
+          }
+          return { attendance: updated };
+        });
+      },
+      removeExtra: (playerId, itemId) => {
+        set((s) => {
+          const updated = s.attendance.map((p) =>
+            p.id === playerId ? { ...p, extras: (p.extras ?? []).filter((e) => e.id !== itemId) } : p);
+          const target = updated.find((p) => p.id === playerId);
+          if (target) {
+            supabase.from('attendance').update(toDbPlayer(target)).eq('id', playerId).then(({ error }) => {
+              if (error) console.error('Erro ao remover item da comanda no Supabase:', error);
             });
           }
           return { attendance: updated };
@@ -370,7 +473,7 @@ export const useStore = create<AppState>()(
       name: STORE_KEY,
       partialize: (s): PersistedData => ({
         attendance: s.attendance, expenses: s.expenses, socios: s.socios,
-        time: s.time, settings: s.settings,
+        time: s.time, products: s.products, settings: s.settings,
       }),
     },
   ),

@@ -26,6 +26,12 @@ describe('calc', () => {
     // 0 + 0 + 2*3 = 6
     expect(calcTotal(p, settings)).toBe(6);
     const li = lineItems(p, settings);
-    expect(li).toEqual({ field: 0, mags: 0, drinks: 6, total: 6 });
+    expect(li).toEqual({ field: 0, mags: 0, drinks: 6, extras: 0, total: 6 });
+  });
+  it('soma os extras no total', () => {
+    const p = { ...base, hasWeapon: true, magazines: 0, drinks: 0, extras: [{ id: 'x', name: 'Água', price: 5, qty: 2 }] };
+    // 10 (campo) + 0 + 0 + 2*5 = 20
+    expect(calcTotal(p, settings)).toBe(20);
+    expect(lineItems(p, settings).extras).toBe(10);
   });
 });
