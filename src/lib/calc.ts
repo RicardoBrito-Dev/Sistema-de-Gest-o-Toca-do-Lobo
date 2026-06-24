@@ -1,8 +1,9 @@
 import type { AttendanceRecord, Settings } from '../types';
+import { FREE_RENTAL_MAGS } from './constants';
 
 export function getChargeableMags(hasWeapon: boolean, magazines: number): number {
   const mags = magazines || 0;
-  return hasWeapon ? mags : Math.max(0, mags - 2);
+  return hasWeapon ? mags : Math.max(0, mags - FREE_RENTAL_MAGS);
 }
 
 export interface LineItems { field: number; mags: number; drinks: number; extras: number; total: number; }
