@@ -4,7 +4,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: './',
+  // Caminho absoluto: necessário para que os assets carreguem em rotas aninhadas
+  // (ex.: /comanda/:id acessada direto pelo QR). Com './' o navegador resolveria
+  // ./assets relativo a /comanda/ → 404.
+  base: '/',
   plugins: [react()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
