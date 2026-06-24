@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/RicardoBrito-Dev/Sistema-de-Gest-o-Toca-do-Lobo#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.0",
