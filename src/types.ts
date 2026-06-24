@@ -17,6 +17,13 @@ export interface ComandaItem {
   qty: number;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  active: boolean;
+}
+
 export interface AttendanceRecord {
   id: string;
   name: string;
@@ -76,5 +83,6 @@ export interface PersistedData {
   expenses: Expense[];
   socios: Socio[];
   time: TimeMember[];
+  products: Product[];
   settings: Settings;
 }
