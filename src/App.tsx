@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useSidebar } from './hooks/useSidebar';
 import { useStore } from './store/useStore';
@@ -51,8 +51,9 @@ function AuthedApp() {
   const dbStatus = useStore((s) => s.dbStatus);
   const dbError = useStore((s) => s.dbError);
   const initDb = useStore((s) => s.initDb);
-  const { authed, login, logout } = useAuth();
+  const { authed, currentUser, login, logout } = useAuth();
   const { expanded, toggle: toggleSidebar } = useSidebar();
+  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     initDb();
@@ -71,9 +72,9 @@ function AuthedApp() {
   return (
     <ToastProvider>
       <div className="min-h-dvh bg-canvas font-body text-surface-fg">
-        <Sidebar onLogout={logout} expanded={expanded} />
+        <Sidebar onLogout={logout} expanded={expanded} isAdmin={isAdmin} />
         <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${expanded ? 'md:pl-60' : 'md:pl-16'}`}>
-          <Header onLogout={logout} onToggleSidebar={toggleSidebar} />
+          <Header onLogout={logout} onToggleSidebar={toggleSidebar} currentUser={currentUser} />
           <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
           <Routes>
             <Route path="/" element={<DashboardPage />} />
@@ -82,12 +83,12 @@ function AuthedApp() {
             <Route path="/comandas" element={<ComandasPage />} />
             <Route path="/socios" element={<SociosPage />} />
             <Route path="/time" element={<TimePage />} />
-            <Route path="/configuracoes" element={<SettingsPage />} />
+            <Route path="/configuracoes" element={isAdmin ? <SettingsPage currentUser={currentUser} /> : <Navigate to="/" replace />} />
             <Route path="/ajuda" element={<HelpPage />} />
           </Routes>
           </main>
         </div>
-        <MobileNav />
+        <MobileNav isAdmin={isAdmin} />
       </div>
     </ToastProvider>
   );

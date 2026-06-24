@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData, PaymentMethod, Product, ComandaItem,
+  AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData, PaymentMethod, Product, ComandaItem, User,
 } from '../types';
 import { DEFAULTS, LEGACY_KEYS, STORE_KEY, uid } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -22,6 +22,7 @@ export function buildMigratedState(): PersistedData | null {
     socios: parse<Socio[]>(localStorage.getItem(LEGACY_KEYS.socios), []),
     time: parse<TimeMember[]>(localStorage.getItem(LEGACY_KEYS.time), []),
     products: [],
+    users: [],
     settings: { ...DEFAULTS, ...parse<Partial<Settings>>(localStorage.getItem(LEGACY_KEYS.settings), {}) },
   };
 }
@@ -154,6 +155,28 @@ function toDbProduct(p: Product) {
   return { id: p.id, name: p.name, price: p.price, active: p.active };
 }
 
+function toReactUser(u: DbRow): User {
+  return {
+    id: u.id,
+    username: u.username,
+    password: u.password,
+    name: u.name || undefined,
+    role: u.role === 'admin' ? 'admin' : 'operador',
+    active: u.active ?? true,
+  };
+}
+
+function toDbUser(u: User) {
+  return {
+    id: u.id,
+    username: u.username,
+    password: u.password,
+    name: u.name || null,
+    role: u.role,
+    active: u.active,
+  };
+}
+
 interface AppState extends PersistedData {
   dbStatus: 'idle' | 'loading' | 'success' | 'error';
   dbError: string | null;
@@ -183,6 +206,10 @@ interface AppState extends PersistedData {
   updateMembro: (id: string, patch: Partial<TimeMember>) => void;
   deleteMembro: (id: string) => void;
 
+  addUser: (data: Omit<User, 'id'>) => void;
+  updateUser: (id: string, patch: Partial<User>) => void;
+  deleteUser: (id: string) => void;
+
   updateSettings: (patch: Partial<Settings>) => void;
 }
 
@@ -194,6 +221,7 @@ export const useStore = create<AppState>()(
       socios: [],
       time: [],
       products: [],
+      users: [],
       settings: { ...DEFAULTS },
       dbStatus: 'idle',
       dbError: null,
@@ -201,22 +229,26 @@ export const useStore = create<AppState>()(
       initDb: async () => {
         set({ dbStatus: 'loading', dbError: null });
         try {
-          const [settingsRes, timeRes, sociosRes, expensesRes, attendanceRes, productsRes] = await Promise.all([
+          const [settingsRes, timeRes, sociosRes, expensesRes, attendanceRes, productsRes, usersRes] = await Promise.all([
             supabase.from('settings').select('*'),
             supabase.from('time_members').select('*'),
             supabase.from('socios').select('*'),
             supabase.from('expenses').select('*'),
             supabase.from('attendance').select('*'),
             supabase.from('products').select('*'),
+            supabase.from('users').select('*'),
           ]);
 
-          // products é opcional: se a tabela ainda não existe (migração não aplicada), não derruba o app
+          // products/users são opcionais: se a tabela ainda não existe (migração não aplicada), não derruba o app
           const err = settingsRes.error || timeRes.error || sociosRes.error || expensesRes.error || attendanceRes.error;
           if (err) {
             throw new Error(err.message || 'Erro desconhecido ao carregar dados do Supabase.');
           }
           if (productsRes.error) {
             console.warn('Tabela "products" indisponível (rode a migração SQL do Comandas v2):', productsRes.error.message);
+          }
+          if (usersRes.error) {
+            console.warn('Tabela "users" indisponível (rode a migração SQL do multiusuário):', usersRes.error.message);
           }
 
           let finalSettings = settingsRes.data?.[0] ? toReactSettings(settingsRes.data[0]) : null;
@@ -225,6 +257,23 @@ export const useStore = create<AppState>()(
           let finalExpenses = expensesRes.data ? expensesRes.data : [];
           let finalAttendance = attendanceRes.data ? attendanceRes.data.map(toReactPlayer) : [];
           let finalProducts = productsRes.data ? productsRes.data.map(toReactProduct) : [];
+          let finalUsers = usersRes.data ? usersRes.data.map(toReactUser) : [];
+
+          // Seed do primeiro admin: se a tabela users existe mas está vazia, cria o admin
+          // a partir das credenciais atuais do settings (preserva o acesso existente).
+          if (!usersRes.error && finalUsers.length === 0 && finalSettings) {
+            const seedAdmin: User = {
+              id: uid(),
+              username: finalSettings.username,
+              password: finalSettings.password,
+              name: 'Administrador',
+              role: 'admin',
+              active: true,
+            };
+            const { error: seedErr } = await supabase.from('users').insert(toDbUser(seedAdmin));
+            if (!seedErr) finalUsers = [seedAdmin];
+            else console.warn('Falha ao semear admin inicial:', seedErr.message);
+          }
 
           // Se as tabelas estiverem sem dados (primeiro acesso no Supabase), alimentamos com os dados locais atuais do localStorage
           if (!finalSettings) {
@@ -263,6 +312,7 @@ export const useStore = create<AppState>()(
             expenses: finalExpenses,
             attendance: finalAttendance,
             products: finalProducts,
+            users: finalUsers,
             dbStatus: 'success',
             dbError: null,
           });
@@ -459,6 +509,32 @@ export const useStore = create<AppState>()(
         });
       },
 
+      addUser: (data) => {
+        const newUser: User = { ...data, id: uid() };
+        set((s) => ({ users: [...s.users, newUser] }));
+        supabase.from('users').insert(toDbUser(newUser)).then(({ error }) => {
+          if (error) console.error('Erro ao adicionar usuário no Supabase:', error);
+        });
+      },
+      updateUser: (id, patch) => {
+        set((s) => {
+          const updated = s.users.map((u) => (u.id === id ? { ...u, ...patch } : u));
+          const target = updated.find((u) => u.id === id);
+          if (target) {
+            supabase.from('users').update(toDbUser(target)).eq('id', id).then(({ error }) => {
+              if (error) console.error('Erro ao atualizar usuário no Supabase:', error);
+            });
+          }
+          return { users: updated };
+        });
+      },
+      deleteUser: (id) => {
+        set((s) => ({ users: s.users.filter((u) => u.id !== id) }));
+        supabase.from('users').delete().eq('id', id).then(({ error }) => {
+          if (error) console.error('Erro ao deletar usuário no Supabase:', error);
+        });
+      },
+
       updateSettings: (patch) => {
         set((s) => {
           const updated = { ...s.settings, ...patch };
@@ -473,7 +549,7 @@ export const useStore = create<AppState>()(
       name: STORE_KEY,
       partialize: (s): PersistedData => ({
         attendance: s.attendance, expenses: s.expenses, socios: s.socios,
-        time: s.time, products: s.products, settings: s.settings,
+        time: s.time, products: s.products, users: s.users, settings: s.settings,
       }),
     },
   ),

@@ -78,11 +78,31 @@ export interface Settings {
   pixCity?: string;
 }
 
+export type UserRole = 'admin' | 'operador';
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  name?: string;
+  role: UserRole;
+  active: boolean;
+}
+
+/** Identidade do usuário logado, guardada na sessão (sem a senha). */
+export interface AuthUser {
+  id: string;
+  username: string;
+  name?: string;
+  role: UserRole;
+}
+
 export interface PersistedData {
   attendance: AttendanceRecord[];
   expenses: Expense[];
   socios: Socio[];
   time: TimeMember[];
   products: Product[];
+  users: User[];
   settings: Settings;
 }

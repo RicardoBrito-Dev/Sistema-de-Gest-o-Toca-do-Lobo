@@ -3,7 +3,8 @@ import { LogOut } from 'lucide-react';
 import { ROUTES } from '../lib/constants';
 import { ROUTE_ICONS } from './navIcons';
 
-export function Sidebar({ onLogout, expanded }: { onLogout: () => void; expanded: boolean }) {
+export function Sidebar({ onLogout, expanded, isAdmin }: { onLogout: () => void; expanded: boolean; isAdmin: boolean }) {
+  const routes = ROUTES.filter((r) => isAdmin || r.path !== '/configuracoes');
   const width = expanded ? 'w-60' : 'w-16 hover:w-60';
   // Quando fixa aberta, labels sempre visíveis; quando rail, aparecem no hover.
   const label = expanded
@@ -23,7 +24,7 @@ export function Sidebar({ onLogout, expanded }: { onLogout: () => void; expanded
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 py-2">
-        {ROUTES.map((r) => {
+        {routes.map((r) => {
           const Icon = ROUTE_ICONS[r.tab];
           return (
             <NavLink key={r.path} to={r.path} end={r.path === '/'}
