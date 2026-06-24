@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { useSidebar } from './hooks/useSidebar';
 import { useStore } from './store/useStore';
 import { ToastProvider } from './components/ToastProvider';
 import { Sidebar } from './components/Sidebar';
@@ -50,6 +51,7 @@ export default function App() {
   const dbError = useStore((s) => s.dbError);
   const initDb = useStore((s) => s.initDb);
   const { authed, login, logout } = useAuth();
+  const { expanded, toggle: toggleSidebar } = useSidebar();
 
   useEffect(() => {
     initDb();
@@ -69,9 +71,9 @@ export default function App() {
     <ToastProvider>
       <BrowserRouter>
         <div className="min-h-dvh bg-canvas font-body text-surface-fg">
-          <Sidebar onLogout={logout} />
-          <div className="flex min-h-dvh flex-col md:pl-60">
-            <Header onLogout={logout} />
+          <Sidebar onLogout={logout} expanded={expanded} />
+          <div className={`flex min-h-dvh flex-col transition-[padding] duration-200 ${expanded ? 'md:pl-60' : 'md:pl-16'}`}>
+            <Header onLogout={logout} onToggleSidebar={toggleSidebar} />
             <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
