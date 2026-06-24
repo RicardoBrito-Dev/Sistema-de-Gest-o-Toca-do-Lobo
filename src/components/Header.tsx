@@ -1,12 +1,16 @@
 import { useLocation } from 'react-router-dom';
 import { LogOut, Moon, PanelLeft, Sun } from 'lucide-react';
 import { ROUTES } from '../lib/constants';
-import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks/useTheme';
+import type { AuthUser } from '../types';
 
-export function Header({ onLogout, onToggleSidebar }: { onLogout: () => void; onToggleSidebar: () => void }) {
+export function Header({ onLogout, onToggleSidebar, currentUser }: {
+  onLogout: () => void;
+  onToggleSidebar: () => void;
+  currentUser: AuthUser | null;
+}) {
   const { pathname } = useLocation();
-  const username = useStore((s) => s.settings.username);
+  const displayName = currentUser?.name?.trim() || currentUser?.username || '';
   const { theme, toggle } = useTheme();
   const title = ROUTES.find((r) => r.path === pathname)?.title ?? 'Dashboard';
   const dateStr = new Date().toLocaleDateString('pt-BR', {
@@ -30,8 +34,13 @@ export function Header({ onLogout, onToggleSidebar }: { onLogout: () => void; on
           className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-surface-fg transition-colors hover:bg-canvas">
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <span className="hidden rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary sm:inline">
-          {username}
+        <span className="hidden items-center gap-2 rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-medium text-secondary sm:inline-flex">
+          {displayName}
+          {currentUser && (
+            <span className="rounded-full bg-secondary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+              {currentUser.role === 'admin' ? 'Admin' : 'Operador'}
+            </span>
+          )}
         </span>
         <button onClick={onLogout} aria-label="Sair"
           className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-negative transition-colors hover:bg-negative-50 md:hidden">
