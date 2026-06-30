@@ -7,7 +7,7 @@ import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ExpenseModal } from './ExpenseModal';
-import { getChargeableMags } from '../../lib/calc';
+import { lineItems } from '../../lib/calc';
 import { brl, fmtDate, getRange, inRange, periodLabel } from '../../lib/format';
 import type { Expense, Period } from '../../types';
 
@@ -28,18 +28,20 @@ export function FinanceiroPage() {
     const range = getRange(period, period === 'day' ? customDate : undefined);
     const periodAtt = attendance.filter((p) => inRange(p.date, range));
     const periodExp = expenses.filter((e) => inRange(e.date, range));
-    let fieldFee = 0, rental = 0, mags = 0, drinks = 0;
+    let fieldFee = 0, rental = 0, mags = 0, drinks = 0, extras = 0;
     periodAtt.forEach((p) => {
+      const li = lineItems(p, settings);
       if (p.isTeam) {
-        // Membro do Time: isento de campo/carregadores; bebida com preço de time.
-        drinks += (p.drinks || 0) * settings.teamDrinkPrice;
+        drinks += li.drinks;
+        extras += li.extras;
         return;
       }
       if (p.hasWeapon) fieldFee += settings.fieldFeeOwn; else rental += settings.weaponRental;
-      mags += getChargeableMags(p.hasWeapon, p.magazines) * settings.magazinePrice;
-      drinks += (p.drinks || 0) * settings.drinkPrice;
+      mags += li.mags;
+      drinks += li.drinks;
+      extras += li.extras;
     });
-    const totalIncome = fieldFee + rental + mags + drinks;
+    const totalIncome = fieldFee + rental + mags + drinks + extras;
     const totalExpense = periodExp.reduce((s, e) => s + e.amount, 0);
     const balance = totalIncome - totalExpense;
     const barPct = totalIncome > 0 ? Math.max(0, Math.min(100, (balance / totalIncome) * 100)) : 0;
@@ -88,11 +90,18 @@ export function FinanceiroPage() {
         <Card className="flex flex-col p-5">
           <h4 className="mb-3 font-highlight text-sm font-bold uppercase tracking-wide text-negative">Saídas</h4>
           <div className="flex-1">
-            {data.periodExp.length === 0 ? <p className="py-2 text-sm text-surface-muted">Sem despesas no período</p>
+          {data.periodExp.length === 0 ? <p className="py-2 text-sm text-surface-muted">Sem despesas no período</p>
               : data.periodExp.map((e) => (
-                <div key={e.id} className="flex justify-between py-1 text-sm">
+                <div key={e.id} className="flex items-start justify-between gap-2 py-1 text-sm">
                   <span className="text-surface-muted">{e.category}: {e.description}</span>
-                  <span className="tabular-nums text-surface-fg">{brl(e.amount)}</span>
+                  <span className="shrink-0 tabular-nums text-surface-fg">
+                    {brl(e.amount)}
+                    {(e.installments ?? 1) > 1 && (
+                      <span className="ml-1 rounded bg-canvas px-1 py-0.5 text-[10px] font-semibold text-surface-muted">
+                        {e.installments}x
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))}
           </div>
@@ -133,7 +142,14 @@ export function FinanceiroPage() {
                   <td data-label="Data" className="whitespace-nowrap px-4 py-3 text-surface-fg">{fmtDate(e.date)}</td>
                   <td data-label="Categoria" className="px-4 py-3"><Badge kind="badge-expense">{e.category}</Badge></td>
                   <td data-label="Descrição" className="px-4 py-3 text-surface-fg">{e.description}</td>
-                  <td data-label="Valor" className="px-4 py-3 text-right font-semibold tabular-nums text-negative">{brl(e.amount)}</td>
+                  <td data-label="Valor" className="px-4 py-3 text-right font-semibold tabular-nums text-negative">
+                    {brl(e.amount)}
+                    {(e.installments ?? 1) > 1 && (
+                      <div className="text-[11px] font-normal text-surface-muted">
+                        {e.installments}x · total {brl((e.totalAmount ?? e.amount * (e.installments ?? 1)))}
+                      </div>
+                    )}
+                  </td>
                   <td data-label="Ações" className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button title="Editar" onClick={() => { setEditing(e); setModalOpen(true); }}

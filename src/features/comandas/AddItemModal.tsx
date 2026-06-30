@@ -3,22 +3,27 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '../../components/Modal';
 import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
+import { memberDiscountPercent, unitPrice } from '../../lib/calc';
 import { brl } from '../../lib/format';
 
 export function AddItemModal({ open, playerId, onClose }: { open: boolean; playerId: string | null; onClose: () => void }) {
-  // Selecionar o array cru (referência estável) e derivar o filtro com useMemo.
-  // Filtrar dentro do selector retorna um array novo a cada render → loop infinito no Zustand v5.
   const allProducts = useStore((s) => s.products);
   const products = useMemo(() => allProducts.filter((p) => p.active), [allProducts]);
+  const player = useStore((s) => s.attendance.find((p) => p.id === playerId) ?? null);
+  const settings = useStore((s) => s.settings);
   const addExtra = useStore((s) => s.addExtra);
   const { toast } = useToast();
   const [sel, setSel] = useState<string>('');
   const [qty, setQty] = useState(1);
   const product = products.find((p) => p.id === sel);
+  const discount = player ? memberDiscountPercent(player, settings) : 0;
+  const unit = product && player ? unitPrice(product.price, player, settings) : 0;
+  const safeQty = Math.max(1, qty);
 
   const confirm = () => {
-    if (!playerId || !product) { toast('Selecione um produto!', 'error'); return; }
-    addExtra(playerId, { name: product.name, price: product.price, qty: Math.max(1, qty) });
+    if (!playerId || !product || !player) { toast('Selecione um produto!', 'error'); return; }
+    const price = unitPrice(product.price, player, settings);
+    addExtra(playerId, { name: product.name, price, qty: safeQty });
     toast(`${product.name} adicionado!`);
     setSel(''); setQty(1); onClose();
   };
@@ -39,7 +44,12 @@ export function AddItemModal({ open, playerId, onClose }: { open: boolean; playe
               <select id="add-item-product" value={sel} onChange={(e) => setSel(e.target.value)}
                 className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-surface-fg outline-none focus:border-secondary">
                 <option value="">Selecione um produto…</option>
-                {products.map((p) => <option key={p.id} value={p.id}>{p.name} — {brl(p.price)}</option>)}
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} — {brl(player ? unitPrice(p.price, player, settings) : p.price)}
+                    {discount > 0 && player ? ` (${discount}% desc.)` : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -50,7 +60,16 @@ export function AddItemModal({ open, playerId, onClose }: { open: boolean; playe
             </div>
             {product && (
               <div className="rounded-xl border border-line bg-canvas px-4 py-3 text-sm text-surface-muted">
-                Subtotal: <strong className="text-secondary">{brl(product.price * Math.max(1, qty))}</strong>
+                {discount > 0 && (
+                  <div className="mb-1 flex justify-between">
+                    <span>Preço cadastrado</span>
+                    <span className="tabular-nums line-through opacity-60">{brl(product.price)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Subtotal{discount > 0 ? ` (${discount}% desc.)` : ''}</span>
+                  <strong className="text-secondary tabular-nums">{brl(unit * safeQty)}</strong>
+                </div>
               </div>
             )}
           </>

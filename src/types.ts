@@ -32,10 +32,16 @@ export interface AttendanceRecord {
   magazines: number;
   drinks: number;
   isTeam: boolean;
+  isSocio?: boolean;
   paid?: boolean;
   paidAt?: number;       // epoch ms
   paymentMethod?: PaymentMethod;
   extras?: ComandaItem[];
+  cerveja?: number;
+  agua?: number;
+  refrigerante?: number;
+  salgado?: number;
+  rentedWeapon?: string;
 }
 
 export interface Expense {
@@ -43,7 +49,12 @@ export interface Expense {
   date: string;
   category: ExpenseCategory;
   description: string;
+  /** Valor da parcela (= totalAmount / installments). É este valor que impacta o dashboard. */
   amount: number;
+  /** Número de parcelas (padrão 1 = sem parcelamento). */
+  installments?: number;
+  /** Valor total original antes do parcelamento. Apenas informativo. */
+  totalAmount?: number;
 }
 
 export interface Socio {
@@ -71,7 +82,10 @@ export interface Settings {
   fieldFeeOwn: number;
   magazinePrice: number;
   drinkPrice: number;
+  /** @deprecated Derivado de drinkPrice + teamDiscountPercent; mantido por compatibilidade com o banco. */
   teamDrinkPrice: number;
+  teamDiscountPercent: number;
+  socioDiscountPercent: number;
   username: string;
   password: string;
   pixKey?: string;

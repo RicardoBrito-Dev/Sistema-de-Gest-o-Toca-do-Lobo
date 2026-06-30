@@ -7,6 +7,7 @@ import { useStore } from '../../store/useStore';
 import { useToast } from '../../components/ToastProvider';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PlayerModal } from './PlayerModal';
+import { PlayerHistoryModal } from '../../components/PlayerHistoryModal';
 import { calcTotal } from '../../lib/calc';
 import { brl, todayStr } from '../../lib/format';
 import type { AttendanceRecord } from '../../types';
@@ -21,6 +22,7 @@ export function AttendancePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<AttendanceRecord | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [historyPlayer, setHistoryPlayer] = useState<string | null>(null);
 
   const filtered = useMemo(
     () => attendance.filter((p) => p.date === dateFilter),
@@ -75,7 +77,11 @@ export function AttendancePage() {
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-surface-muted">Nenhum jogador registrado nesta data</td></tr>
               ) : filtered.map((p) => (
                 <tr key={p.id} className="transition-colors hover:bg-canvas">
-                  <td data-label="Nome" className="px-4 py-3 font-medium text-surface-fg">{p.name}</td>
+                  <td data-label="Nome" className="px-4 py-3 font-medium text-surface-fg">
+                    <button type="button" onClick={() => setHistoryPlayer(p.name)} className="text-left font-semibold text-surface-fg hover:text-secondary hover:underline">
+                      {p.name}
+                    </button>
+                  </td>
                   <td data-label="Armamento" className="px-4 py-3">
                     {p.isTeam
                       ? <Badge kind="badge-active">🪖 Time</Badge>
@@ -107,6 +113,7 @@ export function AttendancePage() {
       <ConfirmDialog open={confirmId !== null}
         message="Deseja excluir este jogador? Esta ação não pode ser desfeita."
         onConfirm={confirmRemove} onCancel={() => setConfirmId(null)} />
+      <PlayerHistoryModal open={historyPlayer !== null} playerName={historyPlayer} onClose={() => setHistoryPlayer(null)} />
     </div>
   );
 }

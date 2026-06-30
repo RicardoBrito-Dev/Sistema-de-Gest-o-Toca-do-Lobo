@@ -11,6 +11,13 @@ alter table attendance add column if not exists extras jsonb default '[]'::jsonb
 alter table settings add column if not exists pix_key text;
 alter table settings add column if not exists pix_city text;
 
+-- Descontos percentuais para time e sócios (bebidas/comidas)
+alter table settings add column if not exists team_discount_percent numeric not null default 40;
+alter table settings add column if not exists socio_discount_percent numeric not null default 40;
+
+-- Sócio na comanda (desconto em bebidas/comidas)
+alter table attendance add column if not exists is_socio boolean not null default false;
+
 -- Catálogo de produtos (itens avulsos lançáveis nas comandas)
 create table if not exists products (
   id text primary key,

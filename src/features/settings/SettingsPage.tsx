@@ -67,8 +67,8 @@ function PricesSection() {
     weaponRental: String(settings.weaponRental),
     fieldFeeOwn: String(settings.fieldFeeOwn),
     magazinePrice: String(settings.magazinePrice),
-    drinkPrice: String(settings.drinkPrice),
-    teamDrinkPrice: String(settings.teamDrinkPrice),
+    teamDiscountPercent: String(settings.teamDiscountPercent),
+    socioDiscountPercent: String(settings.socioDiscountPercent),
   });
 
   const save = () => {
@@ -76,10 +76,11 @@ function PricesSection() {
       weaponRental: parseFloat(prices.weaponRental),
       fieldFeeOwn: parseFloat(prices.fieldFeeOwn),
       magazinePrice: parseFloat(prices.magazinePrice),
-      drinkPrice: parseFloat(prices.drinkPrice),
-      teamDrinkPrice: parseFloat(prices.teamDrinkPrice),
+      teamDiscountPercent: parseFloat(prices.teamDiscountPercent),
+      socioDiscountPercent: parseFloat(prices.socioDiscountPercent),
     };
     if (Object.values(nums).some((v) => isNaN(v) || v < 0)) { toast('Valores inválidos!', 'error'); return; }
+    if (nums.teamDiscountPercent > 100 || nums.socioDiscountPercent > 100) { toast('Desconto não pode passar de 100%!', 'error'); return; }
     updateSettings(nums);
     toast('Preços salvos!');
   };
@@ -99,9 +100,12 @@ function PricesSection() {
         {field('weaponRental', 'Aluguel de Arma (R$)')}
         {field('fieldFeeOwn', 'Taxa do Campo (R$)')}
         {field('magazinePrice', 'Recarga de Carregador (R$)')}
-        {field('drinkPrice', 'Bebida (R$)')}
-        {field('teamDrinkPrice', 'Bebida — Time (R$)')}
+        {field('teamDiscountPercent', 'Desconto Time (%)')}
+        {field('socioDiscountPercent', 'Desconto Sócio (%)')}
       </div>
+      <p className="text-xs text-surface-muted">
+        Bebidas e salgados usam o preço cadastrado na aba "Produtos". Time e sócios recebem o desconto percentual configurado acima.
+      </p>
       <Button className="self-start" onClick={save}><Save size={16} /> Salvar Preços</Button>
     </Card>
   );

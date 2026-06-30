@@ -4,6 +4,7 @@ import type {
   AttendanceRecord, Expense, Socio, TimeMember, Settings, PersistedData, PaymentMethod, Product, ComandaItem, User,
 } from '../types';
 import { DEFAULTS, LEGACY_KEYS, STORE_KEY, uid } from '../lib/constants';
+import { applyDiscount } from '../lib/calc';
 import { supabase } from '../lib/supabase';
 
 function parse<T>(raw: string | null, fallback: T): T {
@@ -47,10 +48,16 @@ function toReactPlayer(p: DbRow): AttendanceRecord {
     magazines: p.magazines ?? 0,
     drinks: p.drinks ?? 0,
     isTeam: p.is_team ?? false,
+    isSocio: p.is_socio ?? false,
     paid: p.paid ?? false,
     paidAt: p.paid_at ? Number(p.paid_at) : undefined,
     paymentMethod: p.payment_method ?? undefined,
     extras: Array.isArray(p.extras) ? p.extras : [],
+    cerveja: p.cerveja ?? 0,
+    agua: p.agua ?? 0,
+    refrigerante: p.refrigerante ?? 0,
+    salgado: p.salgado ?? 0,
+    rentedWeapon: p.rented_weapon || undefined,
   };
 }
 
@@ -63,10 +70,16 @@ function toDbPlayer(p: AttendanceRecord) {
     magazines: p.magazines ?? 0,
     drinks: p.drinks ?? 0,
     is_team: p.isTeam ?? false,
+    is_socio: p.isSocio ?? false,
     paid: p.paid ?? false,
     paid_at: p.paidAt || null,
     payment_method: p.paymentMethod ?? null,
     extras: p.extras ?? [],
+    cerveja: p.cerveja ?? 0,
+    agua: p.agua ?? 0,
+    refrigerante: p.refrigerante ?? 0,
+    salgado: p.salgado ?? 0,
+    rented_weapon: p.rentedWeapon || null,
   };
 }
 
@@ -119,12 +132,22 @@ function toDbMembro(m: TimeMember) {
 }
 
 function toReactSettings(s: DbRow): Settings {
+  const drinkPrice = Number(s.drink_price);
+  const teamDrinkPrice = Number(s.team_drink_price);
+  const teamDiscountPercent = s.team_discount_percent != null
+    ? Number(s.team_discount_percent)
+    : (drinkPrice > 0 ? Math.round((1 - teamDrinkPrice / drinkPrice) * 100) : 40);
+  const socioDiscountPercent = s.socio_discount_percent != null
+    ? Number(s.socio_discount_percent)
+    : teamDiscountPercent;
   return {
     weaponRental: Number(s.weapon_rental),
     fieldFeeOwn: Number(s.field_fee_own),
     magazinePrice: Number(s.magazine_price),
-    drinkPrice: Number(s.drink_price),
-    teamDrinkPrice: Number(s.team_drink_price),
+    drinkPrice,
+    teamDrinkPrice,
+    teamDiscountPercent,
+    socioDiscountPercent,
     username: s.username,
     password: s.password,
     pixKey: s.pix_key ?? undefined,
@@ -133,13 +156,16 @@ function toReactSettings(s: DbRow): Settings {
 }
 
 function toDbSettings(s: Settings) {
+  const teamDrinkPrice = applyDiscount(s.drinkPrice, s.teamDiscountPercent);
   return {
     id: 1,
     weapon_rental: s.weaponRental,
     field_fee_own: s.fieldFeeOwn,
     magazine_price: s.magazinePrice,
     drink_price: s.drinkPrice,
-    team_drink_price: s.teamDrinkPrice,
+    team_drink_price: teamDrinkPrice,
+    team_discount_percent: s.teamDiscountPercent,
+    socio_discount_percent: s.socioDiscountPercent,
     username: s.username,
     password: s.password,
     pix_key: s.pixKey ?? null,
@@ -153,6 +179,30 @@ function toReactProduct(p: DbRow): Product {
 
 function toDbProduct(p: Product) {
   return { id: p.id, name: p.name, price: p.price, active: p.active };
+}
+
+function toReactExpense(e: DbRow): Expense {
+  return {
+    id: e.id,
+    date: e.date,
+    category: e.category,
+    description: e.description,
+    amount: Number(e.amount),
+    installments: e.installments ?? 1,
+    totalAmount: e.total_amount != null ? Number(e.total_amount) : undefined,
+  };
+}
+
+function toDbExpense(e: Expense) {
+  return {
+    id: e.id,
+    date: e.date,
+    category: e.category,
+    description: e.description,
+    amount: e.amount,
+    installments: e.installments ?? 1,
+    total_amount: e.totalAmount ?? null,
+  };
 }
 
 function toReactUser(u: DbRow): User {
@@ -254,7 +304,7 @@ export const useStore = create<AppState>()(
           let finalSettings = settingsRes.data?.[0] ? toReactSettings(settingsRes.data[0]) : null;
           let finalTime = timeRes.data ? timeRes.data.map(toReactMembro) : [];
           let finalSocios = sociosRes.data ? sociosRes.data.map(toReactSocio) : [];
-          let finalExpenses = expensesRes.data ? expensesRes.data : [];
+          let finalExpenses = expensesRes.data ? expensesRes.data.map(toReactExpense) : [];
           let finalAttendance = attendanceRes.data ? attendanceRes.data.map(toReactPlayer) : [];
           let finalProducts = productsRes.data ? productsRes.data.map(toReactProduct) : [];
           let finalUsers = usersRes.data ? usersRes.data.map(toReactUser) : [];
@@ -273,6 +323,19 @@ export const useStore = create<AppState>()(
             const { error: seedErr } = await supabase.from('users').insert(toDbUser(seedAdmin));
             if (!seedErr) finalUsers = [seedAdmin];
             else console.warn('Falha ao semear admin inicial:', seedErr.message);
+          }
+
+          // Seed dos produtos padrão: Cerveja, Água, Refrigerante, Salgado
+          if (!productsRes.error && finalProducts.length === 0) {
+            const defaultProds: Product[] = [
+              { id: uid(), name: 'Cerveja', price: 8.00, active: true },
+              { id: uid(), name: 'Água', price: 4.00, active: true },
+              { id: uid(), name: 'Refrigerante', price: 6.00, active: true },
+              { id: uid(), name: 'Salgado', price: 7.00, active: true },
+            ];
+            const { error: seedErr } = await supabase.from('products').insert(defaultProds.map(toDbProduct));
+            if (!seedErr) finalProducts = defaultProds;
+            else console.warn('Falha ao semear produtos iniciais:', seedErr.message);
           }
 
           // Se as tabelas estiverem sem dados (primeiro acesso no Supabase), alimentamos com os dados locais atuais do localStorage
@@ -327,7 +390,15 @@ export const useStore = create<AppState>()(
 
       addPlayer: (data) => {
         // Inicializa explicitamente paid: false para evitar undefined e bugs com comandas reabertas
-        const newPlayer: AttendanceRecord = { ...data, id: uid(), paid: false };
+        const newPlayer: AttendanceRecord = {
+          ...data,
+          id: uid(),
+          paid: false,
+          cerveja: data.cerveja ?? 0,
+          agua: data.agua ?? 0,
+          refrigerante: data.refrigerante ?? 0,
+          salgado: data.salgado ?? 0,
+        };
         set((s) => ({ attendance: [...s.attendance, newPlayer] }));
         supabase.from('attendance').insert(toDbPlayer(newPlayer)).then(({ error }) => {
           if (error) console.error('Erro ao adicionar jogador no Supabase:', error);
@@ -434,7 +505,7 @@ export const useStore = create<AppState>()(
       addExpense: (data) => {
         const newExpense: Expense = { ...data, id: uid() };
         set((s) => ({ expenses: [...s.expenses, newExpense] }));
-        supabase.from('expenses').insert(newExpense).then(({ error }) => {
+        supabase.from('expenses').insert(toDbExpense(newExpense)).then(({ error }) => {
           if (error) console.error('Erro ao adicionar despesa no Supabase:', error);
         });
       },
@@ -443,7 +514,7 @@ export const useStore = create<AppState>()(
           const updated = s.expenses.map((e) => (e.id === id ? { ...e, ...patch } : e));
           const target = updated.find((e) => e.id === id);
           if (target) {
-            supabase.from('expenses').update(target).eq('id', id).then(({ error }) => {
+            supabase.from('expenses').update(toDbExpense(target)).eq('id', id).then(({ error }) => {
               if (error) console.error('Erro ao atualizar despesa no Supabase:', error);
             });
           }
@@ -537,7 +608,11 @@ export const useStore = create<AppState>()(
 
       updateSettings: (patch) => {
         set((s) => {
-          const updated = { ...s.settings, ...patch };
+          const merged = { ...s.settings, ...patch };
+          const updated = {
+            ...merged,
+            teamDrinkPrice: applyDiscount(merged.drinkPrice, merged.teamDiscountPercent),
+          };
           supabase.from('settings').upsert(toDbSettings(updated)).then(({ error }) => {
             if (error) console.error('Erro ao atualizar configurações no Supabase:', error);
           });

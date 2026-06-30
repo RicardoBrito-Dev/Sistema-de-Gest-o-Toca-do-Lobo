@@ -19,6 +19,8 @@ export const DEFAULTS: Settings = {
   magazinePrice: 15,
   drinkPrice: 5,
   teamDrinkPrice: 3,
+  teamDiscountPercent: 40,
+  socioDiscountPercent: 40,
   username: 'admin',
   password: 'toca2026',
 };

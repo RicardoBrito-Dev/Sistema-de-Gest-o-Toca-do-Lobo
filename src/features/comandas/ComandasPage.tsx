@@ -9,10 +9,11 @@ import { ComandaModal } from './ComandaModal';
 import { PaymentModal } from './PaymentModal';
 import { AddItemModal } from './AddItemModal';
 import { ComandaQrModal } from './ComandaQrModal';
+import { PlayerHistoryModal } from '../../components/PlayerHistoryModal';
 import { lineItems } from '../../lib/calc';
 import { brl, fmtDate, todayStr } from '../../lib/format';
 import { FREE_RENTAL_MAGS } from '../../lib/constants';
-import type { AttendanceRecord, Settings } from '../../types';
+import type { AttendanceRecord, Settings, Product } from '../../types';
 
 function Stepper({ value, disabled, onDelta }: { value: number; disabled: boolean; onDelta: (d: number) => void }) {
   return (
@@ -30,18 +31,19 @@ function Stepper({ value, disabled, onDelta }: { value: number; disabled: boolea
   );
 }
 
-function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemoveExtra, onQr }: {
-  p: AttendanceRecord; settings: Settings;
+function ComandaRow({ p, settings, products, onPay, onReopen, onAdjust, onAddItem, onRemoveExtra, onQr, onViewHistory }: {
+  p: AttendanceRecord; settings: Settings; products: Product[];
   onPay: (id: string) => void;
   onReopen: (id: string) => void;
-  onAdjust: (id: string, field: 'magazines' | 'drinks', value: number) => void;
+  onAdjust: (id: string, field: 'magazines' | 'drinks' | 'cerveja' | 'agua' | 'refrigerante' | 'salgado', value: number) => void;
   onAddItem: (id: string) => void;
   onRemoveExtra: (playerId: string, itemId: string) => void;
   onQr: (id: string) => void;
+  onViewHistory: (name: string) => void;
 }) {
-  const li = lineItems(p, settings);
+  const li = lineItems(p, settings, products);
   const isRental = !p.isTeam && !p.hasWeapon;
-  const arma = p.isTeam ? 'Membro do Time' : (p.hasWeapon ? 'Arma própria' : 'Arma alugada');
+  const arma = p.isTeam ? 'Membro do Time' : p.isSocio ? 'Sócio' : (p.hasWeapon ? 'Arma própria' : 'Arma alugada');
   const paidAt = p.paidAt ? new Date(p.paidAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   const extras = p.extras ?? [];
 
@@ -50,7 +52,9 @@ function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemov
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="min-w-[140px] flex-1">
           <div className="flex items-center gap-2 font-medium text-surface-fg">
-            {p.name}
+            <button type="button" onClick={() => onViewHistory(p.name)} className="text-left font-semibold text-surface-fg hover:text-secondary hover:underline">
+              {p.name}
+            </button>
             {p.paid && <span className="rounded bg-positive-50 px-1.5 py-0.5 text-[10px] font-semibold text-positive">PAGO {paidAt}</span>}
             {p.paid && p.paymentMethod && <span className="rounded bg-canvas px-1.5 py-0.5 text-[10px] font-semibold uppercase text-surface-muted">{p.paymentMethod}</span>}
           </div>
@@ -115,6 +119,7 @@ function ComandaRow({ p, settings, onPay, onReopen, onAdjust, onAddItem, onRemov
 export function ComandasPage() {
   const attendance = useStore((s) => s.attendance);
   const settings = useStore((s) => s.settings);
+  const products = useStore((s) => s.products);
   const updatePlayer = useStore((s) => s.updatePlayer);
   const reopenComanda = useStore((s) => s.reopenComanda);
   const removeExtra = useStore((s) => s.removeExtra);
@@ -128,6 +133,7 @@ export function ComandasPage() {
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [addItemId, setAddItemId] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<AttendanceRecord | null>(null);
+  const [historyPlayer, setHistoryPlayer] = useState<string | null>(null);
 
   const records = useMemo(() => {
     let recs = attendance.filter((p) => p.date === date).sort((a, b) => a.name.localeCompare(b.name));
@@ -139,13 +145,13 @@ export function ComandasPage() {
   const visible = records.filter((p) =>
     statusFilter === 'all' ? true : statusFilter === 'pago' ? !!p.paid : !p.paid);
 
-  const total = records.reduce((s, p) => s + lineItems(p, settings).total, 0);
-  const recebido = records.filter((p) => p.paid).reduce((s, p) => s + lineItems(p, settings).total, 0);
+  const total = records.reduce((s, p) => s + lineItems(p, settings, products).total, 0);
+  const recebido = records.filter((p) => p.paid).reduce((s, p) => s + lineItems(p, settings, products).total, 0);
   const pendente = total - recebido;
   const pagos = records.filter((p) => p.paid).length;
   const allPaid = records.length > 0 && records.every((p) => p.paid);
 
-  const onAdjust = (id: string, field: 'magazines' | 'drinks', value: number) => {
+  const onAdjust = (id: string, field: 'magazines' | 'drinks' | 'cerveja' | 'agua' | 'refrigerante' | 'salgado', value: number) => {
     updatePlayer(id, { [field]: Math.max(0, value) });
   };
   const onPay = (id: string) => {
@@ -197,8 +203,9 @@ export function ComandasPage() {
           ) : (
             <div className="divide-y divide-line">
               {visible.map((p) => (
-                <ComandaRow key={p.id} p={p} settings={settings} onPay={onPay} onReopen={(id) => setReopenId(id)} onAdjust={onAdjust}
-                  onAddItem={(id) => setAddItemId(id)} onRemoveExtra={removeExtra} onQr={(id) => setQrTarget(records.find((x) => x.id === id) ?? null)} />
+                <ComandaRow key={p.id} p={p} settings={settings} products={products} onPay={onPay} onReopen={(id) => setReopenId(id)} onAdjust={onAdjust}
+                  onAddItem={(id) => setAddItemId(id)} onRemoveExtra={removeExtra} onQr={(id) => setQrTarget(records.find((x) => x.id === id) ?? null)}
+                  onViewHistory={(name) => setHistoryPlayer(name)} />
               ))}
             </div>
           )}
@@ -208,7 +215,7 @@ export function ComandasPage() {
       <ComandaModal open={modalOpen} label={fmtDate(date)} records={records} onClose={() => setModalOpen(false)} />
 
       <PaymentModal open={payTarget !== null} playerId={payTarget?.id ?? null}
-        playerName={payTarget?.name ?? ''} total={payTarget ? lineItems(payTarget, settings).total : 0}
+        playerName={payTarget?.name ?? ''} total={payTarget ? lineItems(payTarget, settings, products).total : 0}
         onClose={() => setPayTarget(null)} />
 
       <AddItemModal open={addItemId !== null} playerId={addItemId} onClose={() => setAddItemId(null)} />
@@ -219,6 +226,8 @@ export function ComandasPage() {
       <ConfirmDialog open={reopenId !== null} message="Reabrir esta comanda paga?"
         onConfirm={() => { if (reopenId) { reopenComanda(reopenId); toast('Comanda reaberta!'); } setReopenId(null); }}
         onCancel={() => setReopenId(null)} />
+
+      <PlayerHistoryModal open={historyPlayer !== null} playerName={historyPlayer} onClose={() => setHistoryPlayer(null)} />
     </div>
   );
 }

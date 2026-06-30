@@ -10,8 +10,9 @@ interface Props { open: boolean; label: string; records: AttendanceRecord[]; onC
 
 export function ComandaModal({ open, label, records, onClose }: Props) {
   const settings = useStore((s) => s.settings);
+  const products = useStore((s) => s.products);
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
-  const totalGeral = sorted.reduce((s, p) => s + lineItems(p, settings).total, 0);
+  const totalGeral = sorted.reduce((s, p) => s + lineItems(p, settings, products).total, 0);
   const now = new Date();
 
   const print = () => {
@@ -55,24 +56,37 @@ export function ComandaModal({ open, label, records, onClose }: Props) {
               <th className="border border-slate-200 p-2">Data</th>
               <th className="border border-slate-200 p-2">Armamento</th>
               <th className="border border-slate-200 p-2 tc text-center">Carreg.</th>
-              <th className="border border-slate-200 p-2 tc text-center">Bebidas</th>
+              <th className="border border-slate-200 p-2 tc text-center">Consumo</th>
               <th className="border border-slate-200 p-2 tr text-right">Arm.</th>
               <th className="border border-slate-200 p-2 tr text-right">Carreg.</th>
-              <th className="border border-slate-200 p-2 tr text-right">Bebida</th>
+              <th className="border border-slate-200 p-2 tr text-right">Consumo</th>
               <th className="border border-slate-200 p-2 tr text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((p) => {
-              const li = lineItems(p, settings);
+              const li = lineItems(p, settings, products);
               const arma = p.isTeam ? 'Membro do Time' : (p.hasWeapon ? 'Arma Própria' : 'Arma Alugada');
+              const consumptionQty = (p.cerveja || 0) + (p.agua || 0) + (p.refrigerante || 0) + (p.salgado || 0) || (p.drinks || 0);
+
+              const breakdownParts: string[] = [];
+              if (p.cerveja && p.cerveja > 0) breakdownParts.push(`Cerveja: ${p.cerveja}`);
+              if (p.agua && p.agua > 0) breakdownParts.push(`Água: ${p.agua}`);
+              if (p.refrigerante && p.refrigerante > 0) breakdownParts.push(`Refri: ${p.refrigerante}`);
+              if (p.salgado && p.salgado > 0) breakdownParts.push(`Salgado: ${p.salgado}`);
+              if (breakdownParts.length === 0 && p.drinks && p.drinks > 0) breakdownParts.push(`Bebidas: ${p.drinks}`);
+              const breakdown = breakdownParts.join(' · ');
+
               return (
                 <tr key={p.id} className="even:bg-slate-50">
-                  <td className="border border-slate-200 p-2">{p.name}</td>
+                  <td className="border border-slate-200 p-2">
+                    <div className="font-semibold">{p.name}</div>
+                    {breakdown && <div className="text-[10px] text-slate-500 mt-0.5">{breakdown}</div>}
+                  </td>
                   <td className="border border-slate-200 p-2">{fmtDate(p.date)}</td>
                   <td className="border border-slate-200 p-2">{arma}</td>
                   <td className="border border-slate-200 p-2 tc text-center">{p.magazines || 0}</td>
-                  <td className="border border-slate-200 p-2 tc text-center">{p.drinks || 0}</td>
+                  <td className="border border-slate-200 p-2 tc text-center">{consumptionQty}</td>
                   <td className="border border-slate-200 p-2 tr text-right">{brl(li.field)}</td>
                   <td className="border border-slate-200 p-2 tr text-right">{brl(li.mags)}</td>
                   <td className="border border-slate-200 p-2 tr text-right">{brl(li.drinks)}</td>

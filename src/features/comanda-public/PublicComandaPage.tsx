@@ -3,37 +3,57 @@ import { useParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Check, Clock, Copy, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getChargeableMags, lineItems } from '../../lib/calc';
+import { getChargeableMags, lineItems, unitPrice, getProductPrice } from '../../lib/calc';
 import { buildPixPayload } from '../../lib/pix';
 import { brl, fmtDate } from '../../lib/format';
 import { DEFAULTS, FREE_RENTAL_MAGS } from '../../lib/constants';
-import type { AttendanceRecord, Settings } from '../../types';
+import type { AttendanceRecord, Settings, Product } from '../../types';
 
-interface ComandaData { player: AttendanceRecord; settings: Settings; }
+interface ComandaData { player: AttendanceRecord; settings: Settings; products: Product[]; }
 
-/** Busca a comanda + settings no Supabase (anon, sem auth). Retorna null se não existir. */
+/** Busca a comanda + settings + produtos no Supabase (anon, sem auth). Retorna null se não existir. */
 async function fetchComanda(id: string | undefined): Promise<ComandaData | null> {
-  const [pRes, sRes] = await Promise.all([
+  const [pRes, sRes, prodRes] = await Promise.all([
     supabase.from('attendance').select('*').eq('id', id).maybeSingle(),
     supabase.from('settings').select('*').limit(1),
+    supabase.from('products').select('*'),
   ]);
   if (pRes.error || !pRes.data) return null;
   const d = pRes.data;
   const player: AttendanceRecord = {
     id: d.id, name: d.name, date: d.date, hasWeapon: d.has_weapon ?? false,
     magazines: d.magazines ?? 0, drinks: d.drinks ?? 0, isTeam: d.is_team ?? false,
+    isSocio: d.is_socio ?? false,
     paid: d.paid ?? false, paidAt: d.paid_at ? Number(d.paid_at) : undefined,
     paymentMethod: d.payment_method ?? undefined,
     extras: Array.isArray(d.extras) ? d.extras : [],
+    cerveja: d.cerveja ?? 0,
+    agua: d.agua ?? 0,
+    refrigerante: d.refrigerante ?? 0,
+    salgado: d.salgado ?? 0,
   };
   const s = sRes.data?.[0];
+  const drinkPrice = s ? Number(s.drink_price) : DEFAULTS.drinkPrice;
+  const teamDrinkPrice = s ? Number(s.team_drink_price) : DEFAULTS.teamDrinkPrice;
+  const teamDiscountPercent = s?.team_discount_percent != null
+    ? Number(s.team_discount_percent)
+    : (drinkPrice > 0 ? Math.round((1 - teamDrinkPrice / drinkPrice) * 100) : DEFAULTS.teamDiscountPercent);
+  const socioDiscountPercent = s?.socio_discount_percent != null
+    ? Number(s.socio_discount_percent)
+    : teamDiscountPercent;
   const settings: Settings = s ? {
     weaponRental: Number(s.weapon_rental), fieldFeeOwn: Number(s.field_fee_own),
-    magazinePrice: Number(s.magazine_price), drinkPrice: Number(s.drink_price),
-    teamDrinkPrice: Number(s.team_drink_price), username: s.username, password: s.password,
+    magazinePrice: Number(s.magazine_price), drinkPrice, teamDrinkPrice,
+    teamDiscountPercent, socioDiscountPercent,
+    username: s.username, password: s.password,
     pixKey: s.pix_key ?? undefined, pixCity: s.pix_city ?? undefined,
   } : DEFAULTS;
-  return { player, settings };
+
+  const products: Product[] = prodRes.data
+    ? prodRes.data.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price), active: p.active ?? true }))
+    : [];
+
+  return { player, settings, products };
 }
 
 export function PublicComandaPage() {
@@ -41,6 +61,7 @@ export function PublicComandaPage() {
   const [state, setState] = useState<'loading' | 'ok' | 'notfound'>('loading');
   const [player, setPlayer] = useState<AttendanceRecord | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -52,6 +73,7 @@ export function PublicComandaPage() {
       if (!data) { setState('notfound'); return; }
       setPlayer(data.player);
       setSettings(data.settings);
+      setProducts(data.products);
       setState('ok');
     })();
     return () => { cancelled = true; };
@@ -60,7 +82,12 @@ export function PublicComandaPage() {
   const refresh = async () => {
     setRefreshing(true);
     const data = await fetchComanda(id);
-    if (data) { setPlayer(data.player); setSettings(data.settings); setState('ok'); }
+    if (data) {
+      setPlayer(data.player);
+      setSettings(data.settings);
+      setProducts(data.products);
+      setState('ok');
+    }
     setRefreshing(false);
   };
 
@@ -71,7 +98,7 @@ export function PublicComandaPage() {
     return <div className="grid min-h-dvh place-items-center bg-canvas font-body text-surface-muted">Comanda não encontrada.</div>;
   }
 
-  const li = lineItems(player, settings);
+  const li = lineItems(player, settings, products);
   const isRental = !player.isTeam && !player.hasWeapon;
   const armamento = player.isTeam ? 'Membro do Time' : (player.hasWeapon ? 'Arma própria' : 'Arma alugada');
   const chargeableMags = getChargeableMags(player.hasWeapon, player.magazines);
@@ -84,7 +111,30 @@ export function PublicComandaPage() {
     { label: player.isTeam ? 'Membro do Time' : (player.hasWeapon ? 'Taxa do campo' : 'Campo + aluguel de arma'), value: li.field },
   ];
   if (li.mags > 0) rows.push({ label: `Carregadores ${isRental ? 'extras ' : ''}(${chargeableMags}x)`, value: li.mags });
-  if (li.drinks > 0) rows.push({ label: `Bebidas (${player.drinks}x)`, value: li.drinks });
+
+  if (player.cerveja && player.cerveja > 0) {
+    const pPrice = unitPrice(getProductPrice('Cerveja', products), player, settings);
+    rows.push({ label: `Cerveja (${player.cerveja}x)`, value: player.cerveja * pPrice });
+  }
+  if (player.agua && player.agua > 0) {
+    const pPrice = unitPrice(getProductPrice('Água', products), player, settings);
+    rows.push({ label: `Água (${player.agua}x)`, value: player.agua * pPrice });
+  }
+  if (player.refrigerante && player.refrigerante > 0) {
+    const pPrice = unitPrice(getProductPrice('Refrigerante', products), player, settings);
+    rows.push({ label: `Refrigerante (${player.refrigerante}x)`, value: player.refrigerante * pPrice });
+  }
+  if (player.salgado && player.salgado > 0) {
+    const pPrice = unitPrice(getProductPrice('Salgado', products), player, settings);
+    rows.push({ label: `Salgado (${player.salgado}x)`, value: player.salgado * pPrice });
+  }
+
+  const hasNewProducts = (player.cerveja || 0) > 0 || (player.agua || 0) > 0 || (player.refrigerante || 0) > 0 || (player.salgado || 0) > 0;
+  if (!hasNewProducts && player.drinks && player.drinks > 0) {
+    const pPrice = unitPrice(settings.drinkPrice || 5.00, player, settings);
+    rows.push({ label: `Bebidas (${player.drinks}x)`, value: player.drinks * pPrice });
+  }
+
   (player.extras ?? []).forEach((e) => rows.push({ label: e.qty > 1 ? `${e.name} x${e.qty}` : e.name, value: e.price * e.qty }));
 
   const pixCode = (!player.paid && settings.pixKey && li.total > 0)
